@@ -329,3 +329,58 @@ UpdateAnnotations <- function(cur.eset) {
   return(cur.eset)
 }
 
+
+
+# generic function for downloading data files from the internet
+downloadData <- function(path.to.data, name, folder=NULL, overwrite=FALSE, md5=NULL) {
+  
+  # TODO
+  # put in update functionality - how to determine file size?
+  # determine whether data is zipped or tar.gz and unpack it
+  # how to associate annotation with this file?
+  
+  if(!is.null(md5) && file.exists(md5)){ # error without shortciruit
+    md5 <- read.delim2(md5)
+  }
+  
+  # check if file exists - if it does then read it and download data
+  if(file.exists(path.to.data)){
+    print("Assuming input is a text file of URLs to download")
+    # read text file
+    urls <- read.delim2(path.to.data)
+    
+    for(i in 1:length(urls)){
+      fname <- unlist(strsplit(url[i], "/", fixed=TRUE))
+      fname <- fname[length(fname)]
+      
+      # if we should not overwrite file, then check to see if it exists in the current location
+      if(!overwrite){
+        logic <- file.exists(paste0(ifelse(is.null(folder), getwd(), folder), "/", fname))
+        if(logic) stop("Stopping because overwrite=FALSE and the file already exists")
+      }
+      download.file(url[i], destfile=paste0(ifelse(is.null(folder), getwd(), folder), "/", fname))
+      
+      if(!is.null(md5)){
+        stopifnot(md5sum(paste0(ifelse(is.null(folder), getwd(), folder), "/", fname, ))==md5[i])
+      }
+    }
+  } else {
+    print("Assuming input is URL to download")
+    fname <- unlist(strsplit(path.to.data, "/", fixed=TRUE))
+    fname <- fname[length(fname)]
+    
+    # if we should not overwrite file, then check to see if it exists in the current location
+    if(!overwrite){
+      logic <- file.exists(paste0(ifelse(is.null(folder), getwd(), folder), "/", fname))
+      if(logic) stop("Stopping because overwrite=FALSE and the file already exists")
+    }
+    
+    download.file(path.to.data, destfile=paste0(ifelse(is.null(folder), getwd(), folder), "/", fname))
+    
+    if(!is.null(md5)){
+      stopifnot(md5sum(paste0(ifelse(is.null(folder), getwd(), folder), "/", fname, ))==md5)
+    }
+  }
+  return(NULL)
+}
+
