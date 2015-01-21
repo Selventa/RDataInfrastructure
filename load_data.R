@@ -1,9 +1,9 @@
 
 library("GEOquery")
 
-source("~/GitHub/rcode/Projects/Method Benchmarking/process_raw_data_funcs.R")
-source("~/GitHub/rcode/Projects/Method Benchmarking/load_data_funcs.R")
-source("~/GitHub/rcode/Projects/Method Benchmarking/update_annotations.R")
+source("~/GitHub/RDataInfrastructure/process_raw_data_funcs.R")
+source("~/GitHub/RDataInfrastructure/load_data_funcs.R")
+source("~/GitHub/RDataInfrastructure/update_annotations.R")
 
 
 #PROBLEMS
@@ -17,7 +17,7 @@ GSE.IDs <- c("GSE42296", "GSE17755", "GSE33377")
 # GSE.IDs <- ""
 esets <- GetEset(GSE.IDs, 
                  eset.folder = "~/esets", 
-                 overwrite.existing=F,
+                 overwrite.existing=T,
                  cache.folder = normalizePath("~/../Downloads"),
                  expt.annot=c(data.source = "from_raw", brainarray=T),
                  verbose=T)
