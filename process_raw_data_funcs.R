@@ -4,19 +4,20 @@ library(affy)
 
 
 ProcessRawGEOData <- function(cur.eset, cache.folder, expt.annot, verbose=T) {
-
-  cur.eset.name <- experimentData(cur.eset)@other$name
+  cur.eset.name <- notes(cur.eset)$name
   
   # get the pData from the eset, so we can keep use the same annotations 
   # for the raw data
   cur.pData <- pData(cur.eset)
-  # get the experimentData from the eset
-  expt.data <- experimentData(cur.eset)@other
+  orig.pData <- notes(cur.eset)$original.pData
+  
+  # get the experiment notes from the eset
+  expt.data <- notes(cur.eset)
   
   platform <- expt.data$platform
   
-  if (!("supplementary_file" %in% colnames(cur.pData))) {
-    if (verbose) {cat("Raw data not available for '", cur.eset.name, "'. ",
+  if (!("supplementary_file" %in% colnames(orig.pData))) {
+    if (verbose) {cat("1Raw data not available for '", cur.eset.name, "'. ",
                       "Using processed data for this data set.\n", sep="")}
     warning("Raw data not available for '", cur.eset.name, "'. ",
             "Using processed data for this data set.")
@@ -32,7 +33,7 @@ ProcessRawGEOData <- function(cur.eset, cache.folder, expt.annot, verbose=T) {
   } else {
     
     # get the names of the supp files to see if they are affy cel files
-    supp.files <- as.character(cur.pData$supplementary_file)
+    supp.files <- as.character(orig.pData$supplementary_file)
     is.affy.file <- all(grepl("\\.cel$|\\.cel\\.", supp.files, ignore.case = T))
     
     if (is.affy.file) {
@@ -42,7 +43,7 @@ ProcessRawGEOData <- function(cur.eset, cache.folder, expt.annot, verbose=T) {
     }
     
     if (!exists(cur.platform.processing.func.name)) {
-      if (verbose) {cat("Raw data not available for '", cur.eset.name, "'. ",
+      if (verbose) {cat("2Raw data not available for '", cur.eset.name, "'. ",
                         "Using processed data for this data set.\n", sep="")}
       warning("Raw data processing function not available for '", 
               cur.eset.name, "'. ",
@@ -55,16 +56,16 @@ ProcessRawGEOData <- function(cur.eset, cache.folder, expt.annot, verbose=T) {
   
   # this is where getGEOSuppFiles should save the files.  So check to see if
   # they exist first to avoid re-downloading something that we already have
-  cur.gsm.files <- file.path(cache.folder, cur.pData$geo_accession, basename(as.character(cur.pData$supplementary_file)))
+  cur.gsm.files <- file.path(cache.folder, orig.pData$geo_accession, basename(as.character(orig.pData$supplementary_file)))
   
   # for each file, see if we have it downloaded already.  If not, download it.
   downloaded.files <- 
-    sapply(1:nrow(cur.pData),
+    sapply(1:nrow(orig.pData),
            function(i) {
              if (file.exists(cur.gsm.files[i])) {
                return(cur.gsm.files[i])
              } else {
-               return(rownames(getGEOSuppFiles(cur.pData$geo_accession[i], 
+               return(rownames(getGEOSuppFiles(orig.pData$geo_accession[i], 
                                                baseDir=cache.folder)))
              }
            })
@@ -80,7 +81,7 @@ ProcessRawGEOData <- function(cur.eset, cache.folder, expt.annot, verbose=T) {
     #if there is a simple naming problem, we might be able to solve it here
     
     # first see if there there is one downloaded file per gsm number
-    downloaded.gsm.files <- sapply(as.character(cur.pData$geo_accession),
+    downloaded.gsm.files <- sapply(as.character(orig.pData$geo_accession),
                                    function(cur.gsm) {
                                      # find all downloaded files that have the current gsm
                                      matches <- grep(cur.gsm, basename(downloaded.files), ignore.case = T)
@@ -93,7 +94,7 @@ ProcessRawGEOData <- function(cur.eset, cache.folder, expt.annot, verbose=T) {
     # if any are NA, then the files don't match up 1-1 with gsm numbers, so
     # can't process raw data
     if (any(is.na(downloaded.gsm.files))) {
-      if (verbose) {cat("Raw data not available for '", cur.eset.name, "'. ",
+      if (verbose) {cat("3Raw data not available for '", cur.eset.name, "'. ",
                         "Using processed data for this data set.\n", sep="")}
       warning("For ", cur.eset.name,
               ", downloaded raw data files don't match with files names from ",
@@ -112,20 +113,25 @@ ProcessRawGEOData <- function(cur.eset, cache.folder, expt.annot, verbose=T) {
                            "(cur.gsm.files",
                            ifelse(is.affy.file, ",expt.annot=expt.annot", ""), 
                            ")")))
-  pData(cur.eset) <- cur.pData
+  # since we processed files based on the original pData, we want to set the
+  # pData for the new eset to be the same as the original pData.  This is just
+  # in case the
+  pData(cur.eset) <- orig.pData
+  notes(cur.eset) <- orig.pData
   
   # identify the items from expt.data that aren't in the eset, and add them
   expt.data.to.add <- expt.data[!(names(expt.data) %in% 
-                                    names(experimentData(cur.eset)@other))]
-  experimentData(cur.eset)@other <- c(experimentData(cur.eset)@other,
-                                      expt.data.to.add)
+                                    names(notes(cur.eset)))]
+  notes(cur.eset) <- c(notes(cur.eset),
+                       expt.data.to.add)
   # overwrite the data.source
-  experimentData(cur.eset)@other$data.source <- "from_raw"
+  notes(cur.eset)$data.source <- "from_raw"
+
   
   # set the platform here because the processing function might not know/capture
   # the platform, and we don't want it to change from the platform listed for
   # the pre-processed data
-  annotation(cur.eset) <- experimentData(cur.eset)@other$platform
+  annotation(cur.eset) <- notes(cur.eset)$platform
   
   return(cur.eset)
   
@@ -184,14 +190,14 @@ process.data.affy <- function(data.files, expt.annot) {
                       celfile.path=NULL, 
                       cdfname=cdf.name)
   
-  # justRMA puts an empty value in experimentData()@other.  Remove it.
-  experimentData(cur.eset)@other <- list()
+  # justRMA puts an empty value in notes(cur.eset).  Remove it.
+  notes(cur.eset) <- list()
   
   if (brainarray) {
     fData(cur.eset)$EGID <- as.numeric(sub("_at", "", rownames(cur.eset)))
   }
   
-  experimentData(cur.eset)@other$brainarray <- brainarray
+  notes(cur.eset)$brainarray <- brainarray
   
   return(cur.eset)
 }

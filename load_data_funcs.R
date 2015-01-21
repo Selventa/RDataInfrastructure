@@ -1,7 +1,5 @@
 
 # each save file is a list of esets.  
-# experimentData(cur.eset)@other$data.source == c("from_raw", "from_processed")
-# experimentData(cur.eset)@other$brainarray.cdf = T/F
 
 
 # Will load from the local file system a list of esets matching the criteria specified
@@ -46,7 +44,7 @@ LoadEset <- function(GSE.ID, eset.folder = "~/esets",
       # relevant expt.annot fields
       loaded.data.source.types <- sapply(tmp.env$esets,
                                   function(cur.eset) {
-                                    experimentData(cur.eset)@other$data.source
+                                    notes(cur.eset)$data.source
                                   })
       loaded.only.from_processed <- (length(loaded.data.source.types)==1 &&
                                        all(loaded.data.source.types=="from_processed"))
@@ -62,9 +60,9 @@ LoadEset <- function(GSE.ID, eset.folder = "~/esets",
         # for those expt.annot fields that are captured in the current eset (ie
         # those that are relevant and were inserted by the data processing function)
         # look for a match
-        tmp.expt.annot <- expt.annot[names(expt.annot) %in% names(experimentData(cur.tmp.eset)@other)]
+        tmp.expt.annot <- expt.annot[names(expt.annot) %in% names(notes(cur.tmp.eset))]
         expt.annot.matches <- 
-          unlist(experimentData(cur.tmp.eset)@other[names(tmp.expt.annot)]) ==
+          unlist(notes(cur.tmp.eset)[names(tmp.expt.annot)]) ==
           tmp.expt.annot
         
         if (all(expt.annot.matches)) {
@@ -94,12 +92,12 @@ SaveEset <- function(cur.eset, eset.folder) {
     esets <- list()
   }
   
-  # see if any of the loaded esets have the same experimentData()@other
+  # see if any of the loaded esets have the same notes
   loaded.eset.to.replace <- 
     sapply(esets,
            function(cur.loaded.eset) {
-             identical(experimentData(cur.loaded.eset)@other,
-                       experimentData(cur.eset)@other)
+             identical(notes(cur.loaded.eset),
+                       notes(cur.eset))
            })
   if (any(loaded.eset.to.replace)) {
     stopifnot(sum(loaded.eset.to.replace)==1)
@@ -115,8 +113,8 @@ SaveEset <- function(cur.eset, eset.folder) {
 
 
 GetEsetName <- function(cur.eset) {
-  # get names out of the experimentData(cur.eset)@other$name slot
-  return(experimentData(cur.eset)@other$name)
+  # get names out of the notes(cur.eset)@$name slot
+  return(notes(cur.eset)$name)
 }
 
 # This function will either load the esets corresponding to GSE.ID from local files 
@@ -170,7 +168,7 @@ GetEset <- function(GSE.ID, eset.folder = "~/esets",
       # label each as coming from processed data
       cur.esets <- lapply(cur.esets,
                           function(cur.eset) {
-                            experimentData(cur.eset)@other$data.source <- "from_processed"
+                            notes(cur.eset)$data.source <- "from_processed"
                             return(cur.eset)
                           })
       
@@ -180,14 +178,14 @@ GetEset <- function(GSE.ID, eset.folder = "~/esets",
                           function(x) as.character(annotation(x)))
       names(cur.esets) <- paste0(cur.GSE.ID, "_", platforms)
     
-      # store the eset name, and other processing information, in the other slot of 
-      # the MIAME experimentData component of the esets
+      # store the eset name, and other processing information, in the eset notes
       for (cur.eset.name in names(cur.esets)) {
         cur.eset <- cur.esets[[cur.eset.name]]
-        experimentData(cur.eset)@other$name <- cur.eset.name
-        experimentData(cur.eset)@other$GSE.ID <- cur.GSE.ID
-        experimentData(cur.eset)@other$platform <- as.character(annotation(cur.eset))
-        experimentData(cur.eset)@other$data.source <- "from_processed"
+        notes(cur.eset)$name <- cur.eset.name
+        notes(cur.eset)$GSE.ID <- cur.GSE.ID
+        notes(cur.eset)$platform <- as.character(annotation(cur.eset))
+        notes(cur.eset)$data.source <- "from_processed"
+        notes(cur.eset)$original.pData <- pData(cur.eset)
         
         cur.esets[[cur.eset.name]] <- cur.eset    
       }
@@ -211,7 +209,7 @@ GetEset <- function(GSE.ID, eset.folder = "~/esets",
                       expt.annot==expt.annot,
                       verbose=verbose)
       
-      # note that the relevant experimentData() fields for each eset are added by  
+      # note that the relevant notes fields for each eset are added by  
       # ProcessRawGEOData() (for raw data processing).  
       
     }
@@ -313,7 +311,12 @@ map.features.to.EGID <- function(cur.eset, platform=NULL, annotation.path="~/Dat
 
 UpdateAnnotations <- function(cur.eset) {
   
-  cur.eset.name <- experimentData(cur.eset)@other$name
+  # protocol: 
+  # - annotation functions work from the original pData each time
+  # - UpdateAnnotations() function should check/enforce proper behavior of each
+  #   individual UpdateAnnotations_() function as they get called
+  
+  cur.eset.name <- notes(cur.eset)$name
   
   annot.update.func.name <- paste0("UpdateAnnotations_", cur.eset.name)
   
@@ -321,19 +324,7 @@ UpdateAnnotations <- function(cur.eset) {
     cur.eset <- eval(parse(text=paste0(annot.update.func.name,
                                        "(cur.eset)")))
   } else {
-#     print(head(pData(cur.eset)))
-#     cat("\nNo annotation processing file exits for ", cur.eset.name, sep="")
-#     cat("\nType 'done' when you're done creating the annotation processing ",
-#         "function called ", annot.update.func.name, ": ", sep="")
-#     while(tolower(readLines(n=1))!="done") {
-#       cat("\nType 'done' when you're done creating the annotation processing ",
-#           "function called ", annot.update.func.name, ": ", sep="")
-#     }
-#     source("~/GitHub/rcode/Projects/Method Benchmarking/update_annotations.R")
-#     if (exists(annot.update.func.name)) {
-#       cur.eset <- eval(parse(text=paste0(annot.update.func.name,
-#                                          "(cur.eset)")))
-#     }
+    cat("\nNo annotation processing file exits for ", cur.eset.name, sep="")
   }
   return(cur.eset)
 }
