@@ -43,9 +43,9 @@ LoadEset <- function(GSE.ID, eset.folder = "~/esets",
       # move to the next file.  If it's not the case, then try to match on all
       # relevant expt.annot fields
       loaded.data.source.types <- sapply(tmp.env$esets,
-                                  function(cur.eset) {
-                                    notes(cur.eset)$data.source
-                                  })
+                                         function(cur.eset) {
+                                           notes(cur.eset)$data.source
+                                         })      
       loaded.only.from_processed <- (length(loaded.data.source.types)==1 &&
                                        all(loaded.data.source.types=="from_processed"))
       if (expt.annot["data.source"]=="from_raw" & loaded.only.from_processed) {
@@ -80,6 +80,10 @@ LoadEset <- function(GSE.ID, eset.folder = "~/esets",
 }
 
 
+# ------------------ TODO --------------------------
+# when saving, check the fields in the existing esets.  If they don't have the
+# same fields as cur.eset then add those fields with an appropriate value (ie, F
+# for logical data, "" for strings, etc.
 SaveEset <- function(cur.eset, eset.folder) {
   cur.eset.name <- GetEsetName(cur.eset)
   
@@ -243,25 +247,6 @@ GetEset <- function(GSE.ID, eset.folder = "~/esets",
 
 
 
-download.and.process.raw.GEO.data <- function(GSE.ID, 
-                                              eset.save.path = "~/esets",
-                                              process.raw = F, brainarray = T,
-                                              overwrite.existing=F,
-                                              cache.folder = normalizePath("~/../Downloads")) {
-
-  # loop over all values in GSE.ID
-    # if !overwrite.existing call load.GEO.data with process.raw=F.  If it returns 
-    # anything, return that.  If it returns nothing, then download and format processed
-    # data
-    #update annotations
-    # run process.raw.data
-  
-  # if !is.na(eset.folder), then save each eset in eset list to a file
-  # call a smart eset save here to add to/overwrite any existing save files
-  
-}
-
-
 
 map.features.to.EGID <- function(cur.eset, platform=NULL, annotation.path="~/Datasets/Feature annotation files/", annotation.file=NULL) {
   
@@ -310,11 +295,6 @@ map.features.to.EGID <- function(cur.eset, platform=NULL, annotation.path="~/Dat
 
 
 UpdateAnnotations <- function(cur.eset) {
-  
-  # protocol: 
-  # - annotation functions work from the original pData each time
-  # - UpdateAnnotations() function should check/enforce proper behavior of each
-  #   individual UpdateAnnotations_() function as they get called
   
   cur.eset.name <- notes(cur.eset)$name
   
