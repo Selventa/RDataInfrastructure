@@ -5,7 +5,7 @@ This project provides capabilities to automatically download projects from data 
 Installation
 --------------
 
-You must first get a token from [github](https://github.com/settings/applications). Click generate new token and then save it to a text file (you only get to copy it once). Read that text file in and install repo.  You mush have access to this repo granted to you in the first place since it is prive.
+You must first get a token from [github](https://github.com/settings/applications). Click generate new token and then save it to a text file (you only get to copy it once). Read that text file in and install repo.  You mush have access to this repo granted to you in the first place since it is private.
 
 ```{R}
 library(devtools)
