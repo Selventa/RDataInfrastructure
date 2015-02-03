@@ -4,8 +4,8 @@ library(affy)
 
 
 ProcessRawGEOData <- function(cur.eset, cache.folder, expt.annot, verbose=T) {
+  ##should use getesetname here and/or source load_data_funcs?
   cur.eset.name <- notes(cur.eset)$name
-  
   # get the pData from the eset, so we can keep use the same annotations 
   # for the raw data
   cur.pData <- pData(cur.eset)
@@ -17,11 +17,18 @@ ProcessRawGEOData <- function(cur.eset, cache.folder, expt.annot, verbose=T) {
   platform <- expt.data$platform
   
   if (!("supplementary_file" %in% colnames(orig.pData))) {
-    if (verbose) {cat("1Raw data not available for '", cur.eset.name, "'. ",
+    if (verbose) {cat("Raw data not available for '", cur.eset.name, "'. ",
                       "Using processed data for this data set.\n", sep="")}
     warning("Raw data not available for '", cur.eset.name, "'. ",
             "Using processed data for this data set.")
     return(cur.eset)
+  }
+
+  if (any(as.character(orig.pData$supplementary_file) == "NONE")){
+    warning("Some raw data is missing from GEO for ", cur.eset.name, ".
+            Files from ", toString(orig.pData$geo_accession[as.character(orig.pData$supplementary_file) == "NONE"]),
+            " are at fault. If desired, change the update_annotation function for", cur.eset.name,
+            " to remove these samples, and then the raw data can be processed.")
   }
   
   cur.ds.processing.func.name <- paste0("process.data.", cur.eset.name)
@@ -31,9 +38,9 @@ ProcessRawGEOData <- function(cur.eset, cache.folder, expt.annot, verbose=T) {
   if (exists(cur.ds.processing.func.name)) {
     cur.processing.func.name <- cur.ds.processing.func.name
   } else {
-    
     # get the names of the supp files to see if they are affy cel files
     supp.files <- as.character(orig.pData$supplementary_file)
+    
     is.affy.file <- all(grepl("\\.cel$|\\.cel\\.", supp.files, ignore.case = T))
     
     if (is.affy.file) {
@@ -43,7 +50,8 @@ ProcessRawGEOData <- function(cur.eset, cache.folder, expt.annot, verbose=T) {
     }
     
     if (!exists(cur.platform.processing.func.name)) {
-      if (verbose) {cat("2Raw data not available for '", cur.eset.name, "'. ",
+      ##this print statement is not entirely accurate?
+      if (verbose) {cat("Raw data not available for '", cur.eset.name, "'. ",
                         "Using processed data for this data set.\n", sep="")}
       warning("Raw data processing function not available for '", 
               cur.eset.name, "'. ",
@@ -76,7 +84,7 @@ ProcessRawGEOData <- function(cur.eset, cache.folder, expt.annot, verbose=T) {
   # check to make sure that the expected gsm files are in the downloaded files.
   # If not, may need to update annotation file before running this function to
   # correct supp file names.  Can't just take this list of downloaded files
-  # as the files to process because sometimes there are extraneous files...
+  # as the files to process because sometimes there are extraneous files (like processed data)...
   if (!all(cur.gsm.files %in% downloaded.files)) {
     #if there is a simple naming problem, we might be able to solve it here
     
@@ -94,7 +102,7 @@ ProcessRawGEOData <- function(cur.eset, cache.folder, expt.annot, verbose=T) {
     # if any are NA, then the files don't match up 1-1 with gsm numbers, so
     # can't process raw data
     if (any(is.na(downloaded.gsm.files))) {
-      if (verbose) {cat("3Raw data not available for '", cur.eset.name, "'. ",
+      if (verbose) {cat("Raw data not available for '", cur.eset.name, "'. ",
                         "Using processed data for this data set.\n", sep="")}
       warning("For ", cur.eset.name,
               ", downloaded raw data files don't match with files names from ",
@@ -107,17 +115,16 @@ ProcessRawGEOData <- function(cur.eset, cache.folder, expt.annot, verbose=T) {
   
   # just in case, run normalizePath() to clean up the file paths
   cur.gsm.files <- normalizePath(cur.gsm.files)
-  
+  #run original processing function
   cur.eset <- 
     eval(parse(text=paste0(cur.processing.func.name,
                            "(cur.gsm.files",
                            ifelse(is.affy.file, ",expt.annot=expt.annot", ""), 
                            ")")))
   # since we processed files based on the original pData, we want to set the
-  # pData for the new eset to be the same as the original pData.  This is just
-  # in case the
+  # pData for the new eset to be the same as the original pData.
   pData(cur.eset) <- orig.pData
-  notes(cur.eset) <- orig.pData
+  notes(cur.eset)$original.pData <- orig.pData
   
   # identify the items from expt.data that aren't in the eset, and add them
   expt.data.to.add <- expt.data[!(names(expt.data) %in% 
