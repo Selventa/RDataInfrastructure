@@ -115,7 +115,16 @@ ProcessRawGEOData <- function(cur.eset, cache.folder, expt.annot, verbose=T) {
   
   # just in case, run normalizePath() to clean up the file paths
   cur.gsm.files <- normalizePath(cur.gsm.files)
+  #check if files are larger than 0 kb, which implies that they are corrupted or downloaded improperly
+  if (!all(sapply(cur.gsm.files, function(gsm.file) file.info(gsm.file)$size)>0)){
+    warning("Some files from GEO downloaded improperly. Files from ",
+            toString(orig.pData$geo_accession[sapply(cur.gsm.files, function(gsm.file) file.info(gsm.file)$size)==0]),
+            " are at fault.If desired, change the update_annotation function for ", cur.eset.name,
+            " to remove these samples, and then the raw data can be processed.")
+    return(cur.eset)
+  }
   #run original processing function
+  #browser()
   cur.eset <- 
     eval(parse(text=paste0(cur.processing.func.name,
                            "(cur.gsm.files",
