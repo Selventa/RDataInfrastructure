@@ -24,6 +24,9 @@ ProcessRawGEOData <- function(cur.eset, cache.folder, expt.annot, verbose=T) {
             "Using processed data for this data set.")
     return(cur.eset)
   }
+  if (any(as.character(orig.pData$supplementary_file) == "NONE")){
+    warning("Some raw data is missing from GEO for ", cur.eset.name, ".")
+  }
   
   cur.ds.processing.func.name <- paste0("process.data.", cur.eset.name)
   
@@ -32,9 +35,9 @@ ProcessRawGEOData <- function(cur.eset, cache.folder, expt.annot, verbose=T) {
   if (exists(cur.ds.processing.func.name)) {
     cur.processing.func.name <- cur.ds.processing.func.name
   } else {
-    
     # get the names of the supp files to see if they are affy cel files
     supp.files <- as.character(orig.pData$supplementary_file)
+    
     is.affy.file <- all(grepl("\\.cel$|\\.cel\\.", supp.files, ignore.case = T))
     
     if (is.affy.file) {
