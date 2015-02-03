@@ -24,6 +24,7 @@ get.interesting.annot.cols <- function(annot) {
 UpdateAnnotations_GSE42296_GPL6244 <- function(cur.eset) {
   
   annot <- pData(cur.eset)
+  new.annot <- data.frame()
   
   # print(get.interesting.annot.cols(annot))
   
@@ -45,21 +46,21 @@ UpdateAnnotations_GSE42296_GPL6244 <- function(cur.eset) {
   responder <- annot$characteristics_ch1.2 == "response: R - responder"
   
   # R/NR for CD patients
-  annot$PRED_Crohns_inflix_response <- ifelse(baseline & Crohns, 
+  new.annot$PRED_Crohns_inflix_response <- ifelse(baseline & Crohns, 
                                           ifelse(responder,
                                                  "R",
                                                  "NR"),
                                           NA)
 
   # R/NR for RA patients
-  annot$PRED_RA_inflix_response <- ifelse(baseline & !Crohns, 
+  new.annot$PRED_RA_inflix_response <- ifelse(baseline & !Crohns, 
                                 ifelse(responder,
                                        "R",
                                        "NR"),
                                 NA)
   
   # RA vs CD
-  annot$PRED_disease <- ifelse(!baseline,
+  new.annot$PRED_disease <- ifelse(!baseline,
                                NA,
                                ifelse(Crohns, 
                                       "CD",
