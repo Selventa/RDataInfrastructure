@@ -6,7 +6,6 @@ library(affy)
 ProcessRawGEOData <- function(cur.eset, cache.folder, expt.annot, verbose=T) {
   ##should use getesetname here and/or source load_data_funcs?
   cur.eset.name <- notes(cur.eset)$name
-  
   # get the pData from the eset, so we can keep use the same annotations 
   # for the raw data
   cur.pData <- pData(cur.eset)
@@ -24,8 +23,12 @@ ProcessRawGEOData <- function(cur.eset, cache.folder, expt.annot, verbose=T) {
             "Using processed data for this data set.")
     return(cur.eset)
   }
+
   if (any(as.character(orig.pData$supplementary_file) == "NONE")){
-    warning("Some raw data is missing from GEO for ", cur.eset.name, ".")
+    warning("Some raw data is missing from GEO for ", cur.eset.name, ".
+            Files from ", toString(orig.pData$geo_accession[as.character(orig.pData$supplementary_file) == "NONE"]),
+            " are at fault. If desired, change the update_annotation function for", cur.eset.name,
+            " to remove these samples, and then the raw data can be processed.")
   }
   
   cur.ds.processing.func.name <- paste0("process.data.", cur.eset.name)
