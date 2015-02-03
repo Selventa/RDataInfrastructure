@@ -1,5 +1,5 @@
 get.interesting.annot.cols <- function(annot) {
-  
+  ##help! i am a function with no comments!!
   unique.vals <- sapply(annot, function(cur.col) {length(unique(cur.col))})
   
   annot.summary <- c()

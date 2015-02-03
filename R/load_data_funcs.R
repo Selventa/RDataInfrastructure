@@ -1,15 +1,17 @@
+library(affyio)
+library(affy)
 
 # each save file is a list of esets.  
 
 
 # Will load from the local file system a list of esets matching the criteria specified
 # in expt.annot.
-# If from_raw is requested, but only from_process exists for that GSE.ID, then
+# If from_raw is requested, but only from_processed exists for that GSE.ID, then
 # the from_processed data will be returned (with appropriate warnings).  However, 
 # if from_raw is requested and a from_raw output exists for a different expt.annot
 # configuration, then no eset will be returned for that GSE.ID.  This way we can
 # be specific about the data that we process from raw (since there may be a few
-# ways of processing it), but if raw data is not available then we canalways get
+# ways of processing it), but if raw data is not available then we can always get
 # back the processed data.
 LoadEset <- function(GSE.ID, eset.folder = "~/esets", 
                           expt.annot=c(data.source = "from_raw",
@@ -118,10 +120,12 @@ GetEsetName <- function(cur.eset) {
 }
 
 # This function will either load the esets corresponding to GSE.ID from local files 
-# (if they're there already and if overwrite.existing==T), or will go download
+# (if they're there already and if overwrite.existing==F), or will go download
 # the data from GEO and process it according to expt.annot if desired. The 
 # annotation files are automatically updated for any data downloaded from GEO, 
 # but not for any data already in local files.
+
+##what other argument options are available for expt.annot?
 GetEset <- function(GSE.ID, eset.folder = "~/esets", 
                     overwrite.existing=F,
                     cache.folder = normalizePath("~/../Downloads"),
@@ -326,7 +330,7 @@ UpdateAnnotations <- function(cur.eset) {
     cur.eset <- eval(parse(text=paste0(annot.update.func.name,
                                        "(cur.eset)")))
   } else {
-    cat("\nNo annotation processing file exits for ", cur.eset.name, sep="")
+    cat("\nNo annotation processing file exists for ", cur.eset.name, sep="")
   }
   return(cur.eset)
 }
@@ -341,7 +345,7 @@ downloadData <- function(path.to.data, name, folder=NULL, overwrite=FALSE, md5=N
   # determine whether data is zipped or tar.gz and unpack it
   # how to associate annotation with this file?
   
-  if(!is.null(md5) && file.exists(md5)){ # error without shortciruit
+  if(!is.null(md5) && file.exists(md5)){ # error without shortcircuit
     md5 <- read.delim2(md5)
   }
   
