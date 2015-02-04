@@ -124,7 +124,6 @@ ProcessRawGEOData <- function(cur.eset, cache.folder, expt.annot, verbose=T) {
     return(cur.eset)
   }
   #run original processing function
-  #browser()
   cur.eset <- 
     eval(parse(text=paste0(cur.processing.func.name,
                            "(cur.gsm.files",
