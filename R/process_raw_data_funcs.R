@@ -112,7 +112,7 @@ ProcessRawGEOData <- function(cur.eset, cache.folder, expt.annot, verbose=T) {
     }
     cur.gsm.files <- downloaded.gsm.files
   }
-  
+
   # just in case, run normalizePath() to clean up the file paths
   cur.gsm.files <- normalizePath(cur.gsm.files)
   #check if files are larger than 0 kb, which implies that they are corrupted or downloaded improperly
@@ -209,7 +209,8 @@ process.data.affy <- function(data.files, expt.annot) {
   notes(cur.eset) <- list()
   
   if (brainarray) {
-    fData(cur.eset)$EGID <- as.numeric(sub("_at", "", rownames(cur.eset)))
+    fData(cur.eset)$EGID <- 
+      suppressWarnings(as.numeric(sub("_at", "", rownames(cur.eset))))
   }
   
   notes(cur.eset)$brainarray <- brainarray
