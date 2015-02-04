@@ -115,20 +115,23 @@ ProcessRawGEOData <- function(cur.eset, cache.folder, expt.annot, verbose=T) {
 
   # just in case, run normalizePath() to clean up the file paths
   cur.gsm.files <- normalizePath(cur.gsm.files)
-  #check if files are larger than 0 kb, which implies that they are corrupted or downloaded improperly
-  if (!all(sapply(cur.gsm.files, function(gsm.file) file.info(gsm.file)$size)>0)){
-    warning("Some files from GEO downloaded improperly. Files from ",
-            toString(orig.pData$geo_accession[sapply(cur.gsm.files, function(gsm.file) file.info(gsm.file)$size)==0]),
-            " are at fault.If desired, change the update_annotation function for ", cur.eset.name,
-            " to remove these samples, and then the raw data can be processed.")
-    return(cur.eset)
-  }
   #run original processing function
-  cur.eset <- 
+  cur.eset <- tryCatch({ 
     eval(parse(text=paste0(cur.processing.func.name,
                            "(cur.gsm.files",
                            ifelse(is.affy.file, ",expt.annot=expt.annot", ""), 
                            ")")))
+  }, warning = function(war){
+    print(paste("Warning: ", war))
+    if (verbose) {cat("A warning occurred while processing '", cur.eset.name, "'. ",
+                      "Using processed data for this data set.\n", sep="")}
+    return(cur.eset)
+  }, error = function(err){
+    print(paste("Error: ", err))
+    if (verbose) {cat("A error occurred while processing '", cur.eset.name, "'. ",
+                      "Using processed data for this data set.\n", sep="")}
+    return(cur.eset)
+  })
   # since we processed files based on the original pData, we want to set the
   # pData for the new eset to be the same as the original pData.
   pData(cur.eset) <- orig.pData
