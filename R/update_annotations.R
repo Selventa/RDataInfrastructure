@@ -23,8 +23,8 @@ get.interesting.annot.cols <- function(annot) {
 
 UpdateAnnotations_GSE42296_GPL6244 <- function(cur.eset) {
   
-  annot <- pData(cur.eset)
-  new.annot <- data.frame()
+  annot <- notes(cur.eset)$original.pData
+  new.annot <- data.frame(row.names=rownames(annot))
   
   # print(get.interesting.annot.cols(annot))
   
@@ -66,7 +66,7 @@ UpdateAnnotations_GSE42296_GPL6244 <- function(cur.eset) {
                                       "CD",
                                       "RA"))
 
-  pData(cur.eset) <- annot
+  pData(cur.eset) <- new.annot
   
   return(cur.eset)
   
@@ -75,35 +75,36 @@ UpdateAnnotations_GSE42296_GPL6244 <- function(cur.eset) {
 
 UpdateAnnotations_GSE17755_GPL1291 <- function(cur.eset) {
   
-#   annot <- pData(cur.eset)
-#   
-#   # get.interesting.annot.cols(annot)
-#   # table(annot[, c("submission_date", "last_update_date")])  # these columns are equivalent
-#   
-#   # we can predict 4 things from this dataset:
-#   #   - batch (submission_date)
-#   #   - gender (characteristics_ch1)
-#   #   - age (characteristics_ch1.1)
-#   #   - disease (characteristics_ch1.2)
-#   
-#   
-#   # batch date
-#   annot$PRED_submission_date <- annot$submission_date
-#   
-#   # gender
-#   stopifnot(length(unique(annot$characteristics_ch1))==2)
-#   annot$PRED_gender <- sub("gender: ", "", annot$characteristics_ch1)
-#   
-#   # age
-#   annot$PRED_age <- as.numeric(sub("age: ", "", annot$characteristics_ch1.1))
-#   stopifnot(identical(paste0("age: ", annot$PRED_age), as.character(annot$characteristics_ch1.1)))
-#   
-#   # disease
-#   annot$PRED_age <- sub("disease: ", "", annot$characteristics_ch1.2)
-# 
-#   
-#   pData(cur.eset) <- annot
-#   
+  annot <- notes(cur.eset)$original.pData
+  new.annot <- data.frame(row.names=rownames(annot))
+  
+  # get.interesting.annot.cols(annot)
+  # table(annot[, c("submission_date", "last_update_date")])  # these columns are equivalent
+  
+  # we can predict 4 things from this dataset:
+  #   - batch (submission_date)
+  #   - gender (characteristics_ch1)
+  #   - age (characteristics_ch1.1)
+  #   - disease (characteristics_ch1.2)
+  
+  
+  # batch date
+  new.annot$PRED_submission_date <- annot$submission_date
+  
+  # gender
+  stopifnot(length(unique(annot$characteristics_ch1))==2)
+  new.annot$PRED_gender <- sub("gender: ", "", annot$characteristics_ch1)
+  
+  # age
+  new.annot$PRED_age <- as.numeric(sub("age: ", "", annot$characteristics_ch1.1))
+  stopifnot(identical(paste0("age: ", new.annot$PRED_age), as.character(annot$characteristics_ch1.1)))
+  
+  # disease
+  new.annot$PRED_age <- sub("disease: ", "", annot$characteristics_ch1.2)
+
+  
+  pData(cur.eset) <- new.annot
+  
   return(cur.eset)
   
 }
