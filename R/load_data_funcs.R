@@ -1,7 +1,6 @@
 library(affyio)
 library(affy)
 
-# each save file is a list of esets.  
 
 
 # Will load from the local file system a list of esets matching the criteria specified
@@ -12,11 +11,16 @@ library(affy)
 # configuration, then no eset will be returned for that GSE.ID.  This way we can
 # be specific about the data that we process from raw (since there may be a few
 # ways of processing it), but if raw data is not available then we can always get
-# back the processed data.
+# back the processed data.  If allow.multiple.matches.per.file==F then in cases
+# where multiple esets in the same file (ie, same GSE/GPL combination) match 
+# the given expt.annot then none will be returned and a warning will be generated.
+# This will allow us to identify cases where we're essentially writing duplicate
+# or ambiguously annotated esets.
 LoadEset <- function(GSE.ID, eset.folder = "~/esets", 
-                          expt.annot=c(data.source = "from_raw",
+                          expt.annot=list(data.source = "from_raw",
                                        brainarray=T),
-                     verbose=T) {
+                     verbose=T,
+                     allow.multiple.matches.per.file=F) {
   
   # if eset.folder is NA, then return an empty list
   if (is.na(eset.folder)) {
@@ -50,13 +54,14 @@ LoadEset <- function(GSE.ID, eset.folder = "~/esets",
                                          })      
       loaded.only.from_processed <- (length(loaded.data.source.types)==1 &&
                                        all(loaded.data.source.types=="from_processed"))
-      if (expt.annot["data.source"]=="from_raw" & loaded.only.from_processed) {
+      if (expt.annot$data.source=="from_raw" & loaded.only.from_processed) {
         msg <- paste0("Eset processed from raw data is not available for ",
                       cur.GSE.ID, " in ", cur.file, ". Loading from_processed eset.")
         cat(msg, "\n")
         warning(msg)
       }
       
+      cur.file.esets <- list()
       # see if any of the esets match the given criteria
       for (cur.tmp.eset in tmp.env$esets) {
         # for those expt.annot fields that are captured in the current eset (ie
@@ -64,12 +69,21 @@ LoadEset <- function(GSE.ID, eset.folder = "~/esets",
         # look for a match
         tmp.expt.annot <- expt.annot[names(expt.annot) %in% names(notes(cur.tmp.eset))]
         expt.annot.matches <- 
-          unlist(notes(cur.tmp.eset)[names(tmp.expt.annot)]) ==
-          tmp.expt.annot
+          identical(notes(cur.tmp.eset)[names(tmp.expt.annot)],
+                    tmp.expt.annot)
         
         if (all(expt.annot.matches)) {
-          esets <- c(esets, list(cur.tmp.eset))
+          cur.file.esets <- c(cur.file.esets, list(cur.tmp.eset))
         }
+      }
+      
+      # if allow.multiple.matches.per.file==F and we found more than one match
+      # throw a warning and don't load them into the eset that is returned.
+      if (!allow.multiple.matches.per.file & length(cur.file.esets)>1) {
+        warning(paste0("Multiple matching esets were found in '", cur.file, 
+                       "'.  None were loaded because allow.multiple.matches.per.file=F"))
+      } else {
+        esets <- c(esets, cur.file.esets)
       }
       
       rm(tmp.env)
@@ -82,10 +96,6 @@ LoadEset <- function(GSE.ID, eset.folder = "~/esets",
 }
 
 
-# ------------------ TODO --------------------------
-# when saving, check the fields in the existing esets.  If they don't have the
-# same fields as cur.eset then add those fields with an appropriate value (ie, F
-# for logical data, "" for strings, etc.
 SaveEset <- function(cur.eset, eset.folder) {
   cur.eset.name <- GetEsetName(cur.eset)
   
@@ -98,12 +108,21 @@ SaveEset <- function(cur.eset, eset.folder) {
     esets <- list()
   }
   
-  # see if any of the loaded esets have the same notes
+  # see if any of the loaded esets have the same notes.  Ignore original.pData 
+  # since this _may_ be modified under some circumstances (like when samples
+  # are ommited)
   loaded.eset.to.replace <- 
     sapply(esets,
            function(cur.loaded.eset) {
-             identical(notes(cur.loaded.eset),
-                       notes(cur.eset))
+             cur.loaded.eset.notes <- notes(cur.loaded.eset)
+             cur.eset.notes <- notes(cur.eset)
+             
+             cur.loaded.eset.notes$original.pData <- 
+               cur.eset.notes$original.pData <- 
+               NULL
+             
+             identical(cur.loaded.eset.notes,
+                       cur.eset.notes)
            })
   if (any(loaded.eset.to.replace)) {
     stopifnot(sum(loaded.eset.to.replace)==1)
@@ -111,6 +130,7 @@ SaveEset <- function(cur.eset, eset.folder) {
   } else {
     esets <- c(esets, cur.eset)
   }
+  
   
   save(esets, file=save.file)
   
@@ -133,7 +153,7 @@ GetEsetName <- function(cur.eset) {
 GetEset <- function(GSE.ID, eset.folder = "~/esets", 
                     overwrite.existing=F,
                     cache.folder = normalizePath("~/../Downloads"),
-                     expt.annot=c(data.source = "from_processed"),
+                     expt.annot=list(data.source = "from_processed"),
                     verbose=T) {
  
   library("GEOquery")	
@@ -141,13 +161,13 @@ GetEset <- function(GSE.ID, eset.folder = "~/esets",
   if (!("data.source" %in% names(expt.annot))) {
     stop("'expt.annot' must contain an element named 'data.source'.")
   }  
-  if (!(expt.annot["data.source"] %in% c("from_processed", "from_raw"))) {
-    stop("expt.annot['data.source'] must be 'from_processed' or 'from_raw'.")
+  if (!(expt.annot$data.source %in% c("from_processed", "from_raw"))) {
+    stop("expt.annot$data.source must be 'from_processed' or 'from_raw'.")
   }
   
   # if we're loading processed data, strip away any other annotations because 
   # they won't apply
-  if (expt.annot["data.source"]=="from_processed") {
+  if (expt.annot$data.source=="from_processed") {
     expt.annot <- expt.annot["data.source"]
   }
   
@@ -162,14 +182,14 @@ GetEset <- function(GSE.ID, eset.folder = "~/esets",
       # if we managed to load from file we can skip to the next GSE.ID
       if (length(cur.esets)>0) {
         esets <- c(esets, cur.esets)
-        if (verbose) {cat("Loaded ", sub("from_", "", expt.annot["data.source"]), 
+        if (verbose) {cat("Loaded ", sub("from_", "", expt.annot$data.source), 
                           " data for ", cur.GSE.ID, " from file.\n", sep="")}
         next
       }
     }
     
     
-    if (expt.annot["data.source"]=="from_processed") {
+    if (expt.annot$data.source=="from_processed") {
       if (verbose) {cat("Downloading processed data for ", cur.GSE.ID, ".\n", sep="")}
       
       # call function from geoQuery package to get processed data from GEO
@@ -200,7 +220,7 @@ GetEset <- function(GSE.ID, eset.folder = "~/esets",
         cur.esets[[cur.eset.name]] <- cur.eset    
       }
       
-    } else if (expt.annot["data.source"]=="from_raw") {
+    } else if (expt.annot$data.source=="from_raw") {
       
       # if we want to process the raw data, first get the pre-processed data (this is
       # where the annotations will come from)
@@ -208,7 +228,7 @@ GetEset <- function(GSE.ID, eset.folder = "~/esets",
                                         eset.folder = eset.folder, 
                                         overwrite.existing=overwrite.existing,
                                         cache.folder = cache.folder,
-                                        expt.annot = c(data.source="from_processed"),
+                                        expt.annot = list(data.source="from_processed"),
                                         verbose=verbose) 
       if (verbose) {cat("Downloading and processing raw data for ", cur.GSE.ID, ".\n", sep="")}
       
@@ -216,7 +236,7 @@ GetEset <- function(GSE.ID, eset.folder = "~/esets",
       cur.esets <- lapply(cur.preprocessed.esets,
                       ProcessRawGEOData,
                       cache.folder, 
-                      expt.annot==expt.annot,
+                      expt.annot=expt.annot,
                       verbose=verbose)
       
       # note that the relevant notes fields for each eset are added by  
