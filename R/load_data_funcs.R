@@ -307,8 +307,46 @@ UpdateAnnotations <- function(cur.eset) {
   annot.update.func.name <- paste0("UpdateAnnotations_", cur.eset.name)
   
   if (exists(annot.update.func.name)) {
-    cur.eset <- eval(parse(text=paste0(annot.update.func.name,
+    tmp.eset <- eval(parse(text=paste0(annot.update.func.name,
                                        "(cur.eset)")))
+    
+    # make sure that the number of rows in pData(tmp.eset) and 
+    # notes(tmp.eset)$original.pData are the same as the number of columns/samples 
+    # in tmp.eset
+    if (nrow(pData(tmp.eset)) != nrow(notes(tmp.eset)$original.pData)) {
+      warning(paste0(annot.update.func.name, "() did not maintain the same number",
+                     " of rows in pData and original.pData.  Annotations were",
+                     " not updated"))
+    } else if(nrow(pData(tmp.eset)) != ncol(tmp.eset)) {
+      warning(paste0(annot.update.func.name, "() did not maintain the same number",
+                     " of samples in pData the eset.  Annotations were",
+                     " not updated"))
+    } else {
+      cur.eset <- tmp.eset
+    }
+    
+    
+    # if "supplementary_file" in original.pData but not in pData(), add to pData
+    # - this is important for processRawGeoData() because it will try to get
+    #   sup files from pData, not original.pData, so that if one of the filenames
+    #   is wrong in original.pData it can be corrected and the correct name will
+    #   be used.
+    if (("supplementary_file" %in% names(notes(cur.eset)$original.pData)) &
+          !("supplementary_file" %in% names(pData(cur.eset)))) {
+      pData(cur.eset)$supplementary_file <- 
+        notes(cur.eset)$original.pData$supplementary_file
+    }
+    
+    # if "geo_accession" in original.pData but not in pData(), add to pData
+    # - this is important for processRawGeoData() because it will try to get
+    #   geo_accession from pData, not original.pData
+    if (("geo_accession" %in% names(notes(cur.eset)$original.pData)) &
+          !("geo_accession" %in% names(pData(cur.eset)))) {
+      pData(cur.eset)$geo_accession <- 
+        notes(cur.eset)$original.pData$geo_accession
+    }
+    
+
   } else {
     cat("\nNo annotation processing file exists for ", cur.eset.name, sep="")
   }
