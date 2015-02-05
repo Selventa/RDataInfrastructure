@@ -116,7 +116,6 @@ ProcessRawGEOData <- function(cur.eset, cache.folder, expt.annot, verbose=T) {
   # just in case, run normalizePath() to clean up the file paths
   cur.gsm.files <- normalizePath(cur.gsm.files)
   #run original processing function
-  browser()
   cur.eset <- tryCatch({ 
     eval(parse(text=paste0(cur.processing.func.name,
                            "(cur.gsm.files",
@@ -134,8 +133,8 @@ ProcessRawGEOData <- function(cur.eset, cache.folder, expt.annot, verbose=T) {
     return(cur.eset)
   })
   # since we processed files based on the original pData, we want to set the
-  # pData for the new eset to be the same as the updated pData.
-  pData(cur.eset) <- cur.pData
+  # pData for the new eset to be the same as the original pData.
+  pData(cur.eset) <- orig.pData
   notes(cur.eset)$original.pData <- orig.pData
   
   # identify the items from expt.data that aren't in the eset, and add them
