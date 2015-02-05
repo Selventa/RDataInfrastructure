@@ -1,3 +1,37 @@
+# This file contains a generic function for processing raw data from GEO 
+# ProcessRawGEOData(), and a set of dataset-specific and platform-specific
+# functions that are then called from ProcessRawGEOData() as appropriate. 
+# First, it looks for a dataset specific processing function, named
+# ProcessData_GSEXXXX_GPLYYYY.  If such a function does not exist, then it will
+# look for a platform-specific processing function named ProcessData_GPLYYYY.  
+# The exception to this rule is the platform-specific processing functions for
+# all affy platforms (detected by supplementary_file names ending in .cel or
+# .cel.gz) is ProcessData_affy().  If no appropriate function can be found for
+# a dataset then the cur.eset that is passed in (presumable from preprocessed
+# data) is returned without modification.
+
+# Dataset- and platform-specific processing function should take as arguments:
+# data.files - a vector of the raw files to use, in the order as presented in
+#              pData(processed.eset)
+# processed.eset - the eset from preprocessed data.  This is used only for the
+#                  pData(processed.eset) and notes(processed.eset)$original.pData.
+# expt.annot - a named list of values to use to configure the data processing 
+#              function. Not all values (or any of them) in this vector need be 
+#              recognized by the function. For example, ProcessData_affy would
+#              recognize 'brainarray' from expt.annot=list(brainarray=T, blah=5)
+#              and ignore the component 'blah'
+
+# Specific processing functions must extract the pData and original pData from
+# processed.eset, and store these back into the returned eset.  This is done so
+# that if the dataset-specific processing function needs to remove samples (for
+# whatever reason), it can modify the pData and original pData to remove the 
+# corresponding rows. It is up to each specific processing function to see if 
+# relevant configuration values are present expt.annot, and ignore all irrelevant
+# values. The relevant configuration values must then be stored in notes(eset).
+# Missing configurations for a given processing function can be given assigned a 
+# default value within the function, and in this case the value must still be
+# recorded in notes(eset). 
+
 
 library(affyio)
 library(affy)
@@ -32,7 +66,7 @@ ProcessRawGEOData <- function(cur.eset, cache.folder, expt.annot, verbose=T) {
             " to remove these samples, and then the raw data can be processed.")
   }
   
-  cur.ds.processing.func.name <- paste0("process.data.", cur.eset.name)
+  cur.ds.processing.func.name <- paste0("ProcessData_", cur.eset.name)
   
   # if there is a processing function for this specific dataset, then use that.
   # otherwise look for a processing function for the current platform
@@ -43,9 +77,9 @@ ProcessRawGEOData <- function(cur.eset, cache.folder, expt.annot, verbose=T) {
     is.affy.file <- all(grepl("\\.cel$|\\.cel\\.|^none$", supp.files, ignore.case = T))
     
     if (is.affy.file) {
-      cur.platform.processing.func.name <- "process.data.affy" 
+      cur.platform.processing.func.name <- "ProcessData_affy" 
     } else {
-      cur.platform.processing.func.name  <- paste0("process.data.", platform)
+      cur.platform.processing.func.name  <- paste0("ProcessData_", platform)
     }
     
     if (!exists(cur.platform.processing.func.name)) {
@@ -176,7 +210,7 @@ ProcessRawGEOData <- function(cur.eset, cache.folder, expt.annot, verbose=T) {
 
 
 
-process.data.affy <- function(data.files, processed.eset, expt.annot) {
+ProcessData_affy <- function(data.files, processed.eset, expt.annot) {
   
   orig.pData <- notes(processed.eset)$original.pData
   cur.pData <- pData(processed.eset)
@@ -186,7 +220,7 @@ process.data.affy <- function(data.files, processed.eset, expt.annot) {
   if (!("brainarray" %in% names(expt.annot))) {
     brainarray <- F
   } else {
-    brainarray <- expt.annot["brainarray"]
+    brainarray <- expt.annot$brainarray
   }
   
   # get the chip type
