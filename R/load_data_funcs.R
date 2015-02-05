@@ -346,8 +346,7 @@ UpdateAnnotations <- function(cur.eset) {
         notes(cur.eset)$original.pData$geo_accession
     }
     
-    # if everything is fine, cur.eset <- tmp.eset
-    }
+
   } else {
     cat("\nNo annotation processing file exists for ", cur.eset.name, sep="")
   }
