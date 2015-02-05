@@ -140,6 +140,32 @@ UpdateAnnotations_GSE17755_GPL1291 <- function(cur.eset) {
   
 }
 
-
+UpdateAnnotations_GSE16879_GPL570 <- function(cur.eset) {
+  
+  annot <- notes(cur.eset)$original.pData
+  new.annot <- data.frame(row.names=rownames(annot))
+  
+  
+  # design column
+  new.annot$DESIGN_source_name_ch1 <- annot$source_name_ch1
+  
+  #contrast between normal and UCR before
+  new.annot$CONTRAST_UCRbefore_Normal <- rep(0, times=nrow(new.annot))
+  new.annot[grepl("Colonic mucosal biopsy from UC responder before first infliximab treatment", new.annot$DESIGN_source_name_ch1),
+            "CONTRAST_UCRbefore_Normal"] <- 1
+  new.annot[grepl("Colonic mucosal biopsy from control individual", new.annot$DESIGN_source_name_ch1),
+            "CONTRAST_UCRbefore_Normal"] <- -1
+  #contrast between normal and UCNR before
+  new.annot$CONTRAST_UCNRbefore_Normal <- rep(0, times=nrow(new.annot))
+  new.annot[grepl("Colonic mucosal biopsy from UC non-responder before first infliximab treatment", new.annot$DESIGN_source_name_ch1),
+            "CONTRAST_UCNRbefore_Normal"] <- 1
+  new.annot[grepl("Colonic mucosal biopsy from control individual", new.annot$DESIGN_source_name_ch1),
+            "CONTRAST_UCNRbefore_Normal"] <- -1
+  
+  pData(cur.eset) <- new.annot
+  
+  return(cur.eset)
+  
+}
 
 
