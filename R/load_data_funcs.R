@@ -160,7 +160,8 @@ GetEset <- function(GSE.ID, eset.folder = "~/esets",
  
   if (!("data.source" %in% names(expt.annot))) {
     stop("'expt.annot' must contain an element named 'data.source'.")
-  }  
+  }
+
   if (!(expt.annot$data.source %in% c("from_processed", "from_raw"))) {
     stop("expt.annot$data.source must be 'from_processed' or 'from_raw'.")
   }
