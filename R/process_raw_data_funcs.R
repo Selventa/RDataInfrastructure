@@ -151,11 +151,10 @@ ProcessRawGEOData <- function(cur.eset, cache.folder, expt.annot, verbose=T) {
   # just in case, run normalizePath() to clean up the file paths
   cur.gsm.files <- normalizePath(cur.gsm.files)
   #run original processing function
+
   tmp.eset <- tryCatch({ 
     eval(parse(text=paste0(cur.processing.func.name,
-                           "(cur.gsm.files",
-                           ifelse(is.affy.file, ",cur.eset, expt.annot=expt.annot", ""), 
-                           ")")))
+                           "(cur.gsm.files, cur.eset, expt.annot=expt.annot)")))
   }, warning = function(war){
     print(paste("Warning: ", war))
     if (verbose) {cat("A warning occurred while processing '", cur.eset.name, "'. ",
@@ -280,4 +279,15 @@ ProcessData_affy <- function(data.files, processed.eset, expt.annot) {
   notes(cur.eset)$original.pData <- orig.pData
   
   return(cur.eset)
+}
+
+ProcessData_GSE42568_GPL570 <- function(data.files, processed.eset, expt.annot){
+  data.files.size <- sapply(data.files, function(file) file.info(file)$size)
+  corrupted.file <- which(0 == data.files.size)
+  data.files.corrected <- data.files[-corrupted.file]
+  processed.eset.corrected <- processed.eset
+  notes(processed.eset.corrected)$original.pData <- notes(processed.eset.corrected)$original.pData[-corrupted.file,]
+  pData(processed.eset.corrected) <- pData(processed.eset.corrected)[-corrupted.file,]
+  return(ProcessData_affy(data.files.corrected, processed.eset.corrected, expt.annot))
+  
 }
