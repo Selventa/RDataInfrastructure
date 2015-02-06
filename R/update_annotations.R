@@ -253,3 +253,45 @@ UpdateAnnotations_GSE6731_GPL8300 <- function(cur.eset) {
   return(cur.eset)
   
 }
+
+UpdateAnnotations_GSE42568_GPL570 <- function(cur.eset) {
+  
+  annot <- notes(cur.eset)$original.pData
+  new.annot <- data.frame(row.names=rownames(annot))
+  
+  
+  # design column
+  new.annot$DESIGN_source_name_ch1 <- sapply(rownames(annot), function(annotrow) 
+    paste0(annot[annotrow, "source_name_ch1"], " & ", annot[annotrow, "characteristics_ch1.2"]))
+  #new.annot$characteristics_ch1.2 <- annot$characteristics_ch1.2
+  
+  #contrast between normal and breast cancer
+#   new.annot$CONTRAST_BC_Normal <- rep(0, times=nrow(new.annot))
+#   new.annot["Breast tissue, cancer" == new.annot$DESIGN_source_name_ch1,
+#             "CONTRAST_BC_Normal"] <- 1
+#   new.annot["Breast tissue, normal" == new.annot$DESIGN_source_name_ch1,
+#             "CONTRAST_BC_Normal"] <- -1
+  
+  #contrast between normal and ER positive
+  new.annot$CONTRAST_ERpos_Normal <- rep(0, times=nrow(new.annot))
+  new.annot[("Breast tissue, cancer & er_status: 1"  == new.annot$DESIGN_source_name_ch1), "CONTRAST_ERpos_Normal"] <- 1
+  new.annot["Breast tissue, normal & er_status: NA"  == new.annot$DESIGN_source_name_ch1,
+            "CONTRAST_ERpos_Normal"] <- -1
+  
+  #contrast between normal and ER negative
+  new.annot$CONTRAST_ERneg_Normal <- rep(0, times=nrow(new.annot))
+  new.annot[("Breast tissue, cancer & er_status: 0"  == new.annot$DESIGN_source_name_ch1), "CONTRAST_ERneg_Normal"] <- 1
+  new.annot["Breast tissue, normal & er_status: NA"  == new.annot$DESIGN_source_name_ch1,
+            "CONTRAST_ERneg_Normal"] <- -1
+  
+  #contrast between ER positive and ER negative
+  new.annot$CONTRAST_ERPos_ERNeg <- rep(0, times=nrow(new.annot))
+  new.annot[("Breast tissue, cancer & er_status: 1"  == new.annot$DESIGN_source_name_ch1), "CONTRAST_ERPos_ERNeg"] <- 1
+  new.annot[("Breast tissue, cancer & er_status: 0"  == new.annot$DESIGN_source_name_ch1), "CONTRAST_ERPos_ERNeg"] <- -1
+
+  
+  pData(cur.eset) <- new.annot
+  
+  return(cur.eset)
+  
+}
