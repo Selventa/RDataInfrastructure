@@ -29,13 +29,15 @@ LimmaGeneric <- function(relev.eset){
   contrast.cols <- grep("^CONTRAST_", colnames(pData(relev.eset)), value=TRUE)
   #create model matrix and linear fit for this eset
   design <- eval(parse(text = paste0("model.matrix(~0+", design.col,", pData(relev.eset))", sep="")))
+  #remove odd column naming convention (adds design.col to the beginning of the types in design.col)
+  colnames(design) <-  sub(design.col, "", colnames(design))
   fit <- lmFit(relev.eset, design)
   eFit.list <- list()
   
   #run each contrast using RunContrasts; save eBayes fit to a list
   for (contrast in 1:length(contrast.cols)){
     contrast.eFit <- tryCatch({
-      RunContrasts(contrast.cols[contrast], design.col, design, relev.eset)
+      RunContrasts(contrast.cols[contrast], design.col, design, relev.eset, fit)
     }, error = function(err){
       print(paste("Error:", err))
       print(paste("An error occurred. Contrast ", contrast.cols[contrast], "will not be calculated."))
@@ -47,7 +49,7 @@ LimmaGeneric <- function(relev.eset){
   return(eFit.list)
 }
 
-RunContrasts <- function(contrast.column, design.column, design.mat, relev.eset){
+RunContrasts <- function(contrast.column, design.column, design.mat, relev.eset, linfit){
   #typeof(contrast.column) == string. This is the name of the column that holds the designation for which samples should
   #be compared in the contrast.
   #typeof(design.column) == string. This is the name of the column that holds the relevant design information (see docstring
@@ -55,16 +57,22 @@ RunContrasts <- function(contrast.column, design.column, design.mat, relev.eset)
   #typeof(design.mat) == matrix. This is the model/design matrix for the linear fit model for the eset of interest.
   #typeof(relev.eset) == expressionSet. This is the eset of interest.
   
-  contrast.matrix <- matrix(0, nrow=ncol(design.mat), ncol=1, dimnames=list(colnames(design.mat), "Contrast Value"))
+  contrast.matrix <- matrix(0, nrow=ncol(design.mat), ncol=1, 
+                            dimnames=list(colnames(design.mat), "Contrast Value"))
   contrast.numerator <- pData(relev.eset)[pData(relev.eset)[,contrast.column]==1, design.column]
   #ensures that there is no user error in selecting the samples for contrast; they should all be of the same type in the
   #design column
-  stopifnot(length(unique(contrast.numerator)) == 1)
   contrast.denominator <- pData(relev.eset)[pData(relev.eset)[,contrast.column]== -1, design.column]
-  stopifnot(length(unique(contrast.denominator)) == 1)
+  if(length(unique(contrast.numerator)) != 1){
+    stop("Error: More or less than one design type among contrast numerator samples")
+  }
+  if(length(unique(contrast.denominator)) != 1){
+    stop("Error: More or less than one design type among contrast denominator samples")
+  }
+  #browser()
   contrast.matrix[unique(contrast.numerator), 1] <- 1
   contrast.matrix[unique(contrast.denominator), 1] <- -1
-  tmp.fit <- contrasts.fit(fit, contrast.matrix)
+  tmp.fit <- contrasts.fit(linfit, contrast.matrix)
   tmp.eFit <- eBayes(tmp.fit)
   return(tmp.eFit)
 }
