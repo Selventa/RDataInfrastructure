@@ -155,6 +155,7 @@ UpdateAnnotations_GSE16879_GPL570 <- function(cur.eset) {
             "CONTRAST_UCRbefore_Normal"] <- 1
   new.annot[grepl("Colonic mucosal biopsy from control individual", new.annot$DESIGN_source_name_ch1),
             "CONTRAST_UCRbefore_Normal"] <- -1
+  
   #contrast between normal and UCNR before
   new.annot$CONTRAST_UCNRbefore_Normal <- rep(0, times=nrow(new.annot))
   new.annot[grepl("Colonic mucosal biopsy from UC non-responder before first infliximab treatment", new.annot$DESIGN_source_name_ch1),
@@ -162,10 +163,93 @@ UpdateAnnotations_GSE16879_GPL570 <- function(cur.eset) {
   new.annot[grepl("Colonic mucosal biopsy from control individual", new.annot$DESIGN_source_name_ch1),
             "CONTRAST_UCNRbefore_Normal"] <- -1
   
+  #contrast between normal and CDcR before
+  new.annot$CONTRAST_CDcRbefore_Normal <- rep(0, times=nrow(new.annot))
+  new.annot[grepl("Colonic mucosal biopsy from CDc responder before first infliximab treatment", new.annot$DESIGN_source_name_ch1),
+            "CONTRAST_CDcRbefore_Normal"] <- 1
+  new.annot[grepl("Colonic mucosal biopsy from control individual", new.annot$DESIGN_source_name_ch1),
+            "CONTRAST_CDcRbefore_Normal"] <- -1
+  
+  #contrast between normal and CDcNR before
+  new.annot$CONTRAST_CDcNRbefore_Normal <- rep(0, times=nrow(new.annot))
+  new.annot[grepl("Colonic mucosal biopsy from CDc non-responder before first infliximab treatment", new.annot$DESIGN_source_name_ch1),
+            "CONTRAST_CDcNRbefore_Normal"] <- 1
+  new.annot[grepl("Colonic mucosal biopsy from control individual", new.annot$DESIGN_source_name_ch1),
+            "CONTRAST_CDcNRbefore_Normal"] <- -1
+  
+  #contrast between ileal normal and CDiR before
+  new.annot$CONTRAST_CDiRbefore_ilNormal <- rep(0, times=nrow(new.annot))
+  new.annot[grepl("Ileal mucosal biopsy from CDi responder before first infliximab treatment", new.annot$DESIGN_source_name_ch1),
+            "CONTRAST_CDiRbefore_ilNormal"] <- 1
+  new.annot[grepl("Ileal mucosal biopsy from control individual", new.annot$DESIGN_source_name_ch1),
+            "CONTRAST_CDiRbefore_ilNormal"] <- -1
+  
+  #contrast between ileal normal and CDiNR before
+  new.annot$CONTRAST_CDiNRbefore_ilNormal <- rep(0, times=nrow(new.annot))
+  new.annot[grepl("Ileal mucosal biopsy from CDi non-responder before first infliximab treatment", new.annot$DESIGN_source_name_ch1),
+            "CONTRAST_CDiNRbefore_ilNormal"] <- 1
+  new.annot[grepl("Ileal mucosal biopsy from control individual", new.annot$DESIGN_source_name_ch1),
+            "CONTRAST_CDiNRbefore_ilNormal"] <- -1
+  
   pData(cur.eset) <- new.annot
   
   return(cur.eset)
   
 }
 
-
+UpdateAnnotations_GSE6731_GPL8300 <- function(cur.eset) {
+  
+  annot <- notes(cur.eset)$original.pData
+  new.annot <- data.frame(row.names=rownames(annot))
+  
+  
+  # design column
+  new.annot$DESIGN_source_name_ch1 <- annot$source_name_ch1
+  
+  #contrast between normal and CD affected
+  new.annot$CONTRAST_CDaff_Normal <- rep(0, times=nrow(new.annot))
+  new.annot[grepl("colonoscopic biopsy from adult with affected colon with Crohn's disease", new.annot$DESIGN_source_name_ch1),
+            "CONTRAST_CDaff_Normal"] <- 1
+  new.annot[grepl("colonoscopic biopsy from normal adult", new.annot$DESIGN_source_name_ch1),
+            "CONTRAST_CDaff_Normal"] <- -1
+  
+  #contrast between normal and CD unaffected
+  new.annot$CONTRAST_CDunaff_Normal <- rep(0, times=nrow(new.annot))
+  new.annot[grepl("colonoscopic biopsy from adult with unaffected colon with Crohn's disease", new.annot$DESIGN_source_name_ch1),
+            "CONTRAST_CDunaff_Normal"] <- 1
+  new.annot[grepl("colonoscopic biopsy from normal adult", new.annot$DESIGN_source_name_ch1),
+            "CONTRAST_CDunaff_Normal"] <- -1
+  
+  #contrast between normal and UC affected
+  new.annot$CONTRAST_UCaff_Normal <- rep(0, times=nrow(new.annot))
+  new.annot[grepl("colonoscopic biopsy from adult with affected colon from adult with UC", new.annot$DESIGN_source_name_ch1),
+            "CONTRAST_UCaff_Normal"] <- 1
+  new.annot[grepl("colonoscopic biopsy from normal adult", new.annot$DESIGN_source_name_ch1),
+            "CONTRAST_UCaff_Normal"] <- -1
+  
+  #contrast between normal and UC affected
+  new.annot$CONTRAST_UCunaff_Normal <- rep(0, times=nrow(new.annot))
+  new.annot[grepl("colonoscopic biopsy from adult with unaffected colon from adult with UC", new.annot$DESIGN_source_name_ch1),
+            "CONTRAST_UCunaff_Normal"] <- 1
+  new.annot[grepl("colonoscopic biopsy from normal adult", new.annot$DESIGN_source_name_ch1),
+            "CONTRAST_UCunaff_Normal"] <- -1
+  
+  #contrast between normal and INF
+  new.annot$CONTRAST_INF_Normal <- rep(0, times=nrow(new.annot))
+  new.annot[grepl("colonoscopic biopsy from adult with affected colon from adult with INF", new.annot$DESIGN_source_name_ch1),
+            "CONTRAST_INF_Normal"] <- 1
+  new.annot[grepl("colonoscopic biopsy from normal adult", new.annot$DESIGN_source_name_ch1),
+            "CONTRAST_INF_Normal"] <- -1
+  
+  #contrast between normal and IC
+  new.annot$CONTRAST_IC_Normal <- rep(0, times=nrow(new.annot))
+  new.annot[grepl("colonoscopic biopsy from adult with affected colon from adult with IC", new.annot$DESIGN_source_name_ch1),
+            "CONTRAST_IC_Normal"] <- 1
+  new.annot[grepl("colonoscopic biopsy from normal adult", new.annot$DESIGN_source_name_ch1),
+            "CONTRAST_IC_Normal"] <- -1
+  
+  pData(cur.eset) <- new.annot
+  
+  return(cur.eset)
+  
+}
