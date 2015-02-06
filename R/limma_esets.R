@@ -68,4 +68,3 @@ RunContrasts <- function(contrast.column, design.column, design.mat, relev.eset)
   tmp.eFit <- eBayes(tmp.fit)
   return(tmp.eFit)
 }
-eFits <- GEOPipelineLimma(esets[[1]])
