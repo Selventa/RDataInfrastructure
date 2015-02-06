@@ -69,7 +69,6 @@ RunContrasts <- function(contrast.column, design.column, design.mat, relev.eset,
   if(length(unique(contrast.denominator)) != 1){
     stop("Error: More or less than one design type among contrast denominator samples")
   }
-  #browser()
   contrast.matrix[unique(contrast.numerator), 1] <- 1
   contrast.matrix[unique(contrast.denominator), 1] <- -1
   tmp.fit <- contrasts.fit(linfit, contrast.matrix)
