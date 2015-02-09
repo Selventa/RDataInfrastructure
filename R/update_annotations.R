@@ -261,33 +261,33 @@ UpdateAnnotations_GSE42568_GPL570 <- function(cur.eset) {
   
   
   # design column
-  new.annot$DESIGN_source_name_ch1 <- sapply(rownames(annot), function(annotrow) 
+  new.annot$DESIGN_1source_name_ch1 <- sapply(rownames(annot), function(annotrow) 
     paste0(annot[annotrow, "source_name_ch1"], " & ", annot[annotrow, "characteristics_ch1.2"]))
-  #new.annot$characteristics_ch1.2 <- annot$characteristics_ch1.2
+  new.annot$DESIGN_2source_name_ch1 <- annot[, "source_name_ch1"]
   
   #contrast between normal and breast cancer
-#   new.annot$CONTRAST_BC_Normal <- rep(0, times=nrow(new.annot))
-#   new.annot["Breast tissue, cancer" == new.annot$DESIGN_source_name_ch1,
-#             "CONTRAST_BC_Normal"] <- 1
-#   new.annot["Breast tissue, normal" == new.annot$DESIGN_source_name_ch1,
-#             "CONTRAST_BC_Normal"] <- -1
+  new.annot$CONTRAST_2BC_Normal <- rep(0, times=nrow(new.annot))
+  new.annot["Breast tissue, cancer" == new.annot$DESIGN_2source_name_ch1,
+            "CONTRAST_2BC_Normal"] <- 1
+  new.annot["Breast tissue, normal" == new.annot$DESIGN_2source_name_ch1,
+            "CONTRAST_2BC_Normal"] <- -1
   
   #contrast between normal and ER positive
-  new.annot$CONTRAST_ERpos_Normal <- rep(0, times=nrow(new.annot))
-  new.annot[("Breast tissue, cancer & er_status: 1"  == new.annot$DESIGN_source_name_ch1), "CONTRAST_ERpos_Normal"] <- 1
-  new.annot["Breast tissue, normal & er_status: NA"  == new.annot$DESIGN_source_name_ch1,
-            "CONTRAST_ERpos_Normal"] <- -1
+  new.annot$CONTRAST_1ERpos_Normal <- rep(0, times=nrow(new.annot))
+  new.annot[("Breast tissue, cancer & er_status: 1"  == new.annot$DESIGN_1source_name_ch1), "CONTRAST_1ERpos_Normal"] <- 1
+  new.annot["Breast tissue, normal & er_status: NA"  == new.annot$DESIGN_1source_name_ch1,
+            "CONTRAST_1ERpos_Normal"] <- -1
   
   #contrast between normal and ER negative
-  new.annot$CONTRAST_ERneg_Normal <- rep(0, times=nrow(new.annot))
-  new.annot[("Breast tissue, cancer & er_status: 0"  == new.annot$DESIGN_source_name_ch1), "CONTRAST_ERneg_Normal"] <- 1
-  new.annot["Breast tissue, normal & er_status: NA"  == new.annot$DESIGN_source_name_ch1,
-            "CONTRAST_ERneg_Normal"] <- -1
+  new.annot$CONTRAST_1ERneg_Normal <- rep(0, times=nrow(new.annot))
+  new.annot[("Breast tissue, cancer & er_status: 0"  == new.annot$DESIGN_1source_name_ch1), "CONTRAST_1ERneg_Normal"] <- 1
+  new.annot["Breast tissue, normal & er_status: NA"  == new.annot$DESIGN_1source_name_ch1,
+            "CONTRAST_1ERneg_Normal"] <- -1
   
   #contrast between ER positive and ER negative
-  new.annot$CONTRAST_ERPos_ERNeg <- rep(0, times=nrow(new.annot))
-  new.annot[("Breast tissue, cancer & er_status: 1"  == new.annot$DESIGN_source_name_ch1), "CONTRAST_ERPos_ERNeg"] <- 1
-  new.annot[("Breast tissue, cancer & er_status: 0"  == new.annot$DESIGN_source_name_ch1), "CONTRAST_ERPos_ERNeg"] <- -1
+  new.annot$CONTRAST_1ERPos_ERNeg <- rep(0, times=nrow(new.annot))
+  new.annot[("Breast tissue, cancer & er_status: 1"  == new.annot$DESIGN_1source_name_ch1), "CONTRAST_1ERPos_ERNeg"] <- 1
+  new.annot[("Breast tissue, cancer & er_status: 0"  == new.annot$DESIGN_1source_name_ch1), "CONTRAST_1ERPos_ERNeg"] <- -1
 
   
   pData(cur.eset) <- new.annot
