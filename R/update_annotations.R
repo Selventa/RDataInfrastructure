@@ -295,3 +295,21 @@ UpdateAnnotations_GSE42568_GPL570 <- function(cur.eset) {
   return(cur.eset)
   
 }
+
+UpdateAnnotations_GSE13911_GPL570 <- function(cur.eset) {
+  
+  annot <- notes(cur.eset)$original.pData
+  new.annot <- data.frame(row.names=rownames(annot))
+  
+  #contrast between normal and tumor
+  new.annot$CONTRAST_Tumor_Normal <- rep(0, times=nrow(new.annot))
+  new.annot["TUMOR" == annot$characteristics_ch1.1,
+            "CONTRAST_Tumor_Normal"] <- 1
+  new.annot["NORMAL" == annot$characteristics_ch1.1,
+            "CONTRAST_Tumor_Normal"] <- -1
+  
+  pData(cur.eset) <- new.annot
+  
+  return(cur.eset)
+  
+}
