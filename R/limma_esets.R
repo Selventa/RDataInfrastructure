@@ -25,7 +25,7 @@ LimmaGeneric <- function(relev.eset){
   #locate columns which delineate contrasts
   contrast.cols <- grep("^CONTRAST_", colnames(pData(relev.eset)), value=TRUE)
   #create list which holds results
-  topTable.res <- list()
+  eFit.res <- list()
   for (contrast in 1:length(contrast.cols)){
     #create model matrix for this contrast
     design <- model.matrix(~0+group, data.frame(group=c("denominator", "other", "numerator")
@@ -35,7 +35,7 @@ LimmaGeneric <- function(relev.eset){
     colnames(design) <- sub("group", "",colnames(design))
     fit <- lmFit(relev.eset, design)
     #try to run contrast; if unsuccessful, return error and go on to the next contrast  
-    contrast.topTable <- tryCatch({
+    contrast.eFit <- tryCatch({
       RunContrasts(contrast.cols[contrast], design, fit)
     }, error = function(err){
       print(paste("Error:", err))
@@ -43,10 +43,10 @@ LimmaGeneric <- function(relev.eset){
       return(err)
     })
       #add results from each comparison to the final results list
-    topTable.res[[contrast]] <- contrast.topTable
-    names(topTable.res)[contrast] <- contrast.cols[contrast]
+    eFit.res[[contrast]] <- contrast.eFit
+    names(eFit.res)[contrast] <- contrast.cols[contrast]
   }
-  return(topTable.res)
+  return(eFit.res)
 }
 
 RunContrasts <- function(contrast.column, design.mat,linfit){
