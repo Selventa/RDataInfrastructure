@@ -60,6 +60,5 @@ RunContrasts <- function(contrast.column, design.mat,linfit){
   contrast.matrix["numerator", 1] <- 1
   tmp.fit <- contrasts.fit(linfit, contrast.matrix)
   tmp.eFit <- eBayes(tmp.fit)
-  tmp.topTable <- topTable(tmp.eFit, number=length(tmp.eFit))
-  return(tmp.topTable)
+  return(tmp.eFit)
 }
