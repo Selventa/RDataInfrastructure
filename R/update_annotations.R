@@ -187,12 +187,12 @@ UpdateAnnotations_GSE16879_GPL570 <- function(cur.eset) {
   #contrast between normal and CDcR before
   new.annot$CONTRAST_CDcRbefore_Normal <- rep(0, times=nrow(new.annot))
   new.annot$CONTRAST_CDcRbefore_Normal[CDcR] <- 1
-  new.annot$CONTRAST_CDcRbefore_Normal[colon_control] <- 1
+  new.annot$CONTRAST_CDcRbefore_Normal[colon_control] <- -1
   
   #contrast between normal and CDcNR before
   new.annot$CONTRAST_CDcNRbefore_Normal <- rep(0, times=nrow(new.annot))
   new.annot$CONTRAST_CDcNRbefore_Normal[CDcNR] <- 1
-  new.annot$CONTRAST_CDcNRbefore_Normal[colon_control] <- 1
+  new.annot$CONTRAST_CDcNRbefore_Normal[colon_control] <- -1
   
   #contrast between ileal normal and CDiR before
   new.annot$CONTRAST_CDiRbefore_ilNormal <- rep(0, times=nrow(new.annot))
@@ -215,10 +215,10 @@ UpdateAnnotations_GSE16879_GPL570 <- function(cur.eset) {
   new.annot$CONTRAST_CDcbefore_Normal[CDcR | CDcNR] <- 1
   new.annot$CONTRAST_CDcbefore_Normal[colon_control] <- -1
   
-  #contrast between normal and CDc (R+NR) before
+  #contrast between normal and CDi (R+NR) before
   new.annot$CONTRAST_CDibefore_Normal <- rep(0, times=nrow(new.annot))
   new.annot$CONTRAST_CDibefore_Normal[CDiR | CDiNR] <- 1
-  new.annot$CONTRAST_CDibefore_Normal[colon_control] <- -1
+  new.annot$CONTRAST_CDibefore_Normal[ilium_control] <- -1
 
   pData(cur.eset) <- new.annot
   
