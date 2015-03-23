@@ -70,7 +70,7 @@ ProcessRawGEOData <- function(cur.eset, cache.folder, expt.annot, verbose=T) {
     cur.processing.func.name <- cur.ds.processing.func.name
   } else {
     
-    is.affy.file <- all(grepl("\\.cel$|\\.cel\\.|^none$", supp.files, ignore.case = T))
+    is.affy.file <- all(grepl("\\.cel$|\\.cel\\.", supp.files, ignore.case = TRUE))
     
     if (is.affy.file) {
       cur.platform.processing.func.name <- "ProcessData_affy" 
