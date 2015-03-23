@@ -33,10 +33,6 @@
 # recorded in notes(eset). 
 
 
-library(affyio)
-library(affy)
-
-
 ProcessRawGEOData <- function(cur.eset, cache.folder, expt.annot, verbose=T) {
   ##should use getesetname here and/or source load_data_funcs?
   cur.eset.name <- notes(cur.eset)$name
@@ -211,6 +207,9 @@ ProcessRawGEOData <- function(cur.eset, cache.folder, expt.annot, verbose=T) {
 
 ProcessData_affy <- function(data.files, processed.eset, expt.annot) {
   
+  require(affyio)
+  require(affy)
+  
   orig.pData <- notes(processed.eset)$original.pData
   cur.pData <- pData(processed.eset)
   rm(processed.eset)
@@ -251,7 +250,7 @@ ProcessData_affy <- function(data.files, processed.eset, expt.annot) {
     cdf.name <- intersect(cdf.name,avail.pkg)
     
     if(length(cdf.name) != 1) {
-      warning("Cannot find Brainarray CDF for ",  tmp$cdfName, ".  Using default CDF.")
+      warning("Cannot find Brainarray CDF for ",  cel.header$cdfName, ".  Using default CDF.")
       cdf.name <- NULL
       brainarray <- F
     }
