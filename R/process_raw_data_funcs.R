@@ -55,11 +55,18 @@ ProcessRawGEOData <- function(cur.eset, cache.folder, expt.annot, verbose=T) {
   # get the names of the supp files to see if they are affy cel files
   supp.files <- as.character(cur.pData$supplementary_file)
   
-  if (any(supp.files == "NONE")){
+  if (all(toupper(supp.files) == "NONE")){
+    if (verbose) {cat("Raw data not available for '", cur.eset.name, "'. ",
+                      "Using processed data for this data set.\n", sep="")}
+    warning("Raw data not available for '", cur.eset.name, "'. ",
+            "Using processed data for this data set.")
+    return(cur.eset)
+    
+  }
+  if (any(toupper(supp.files) == "NONE")){
     warning("Some raw data is missing from GEO for ", cur.eset.name, ".
-            Files from ", toString(cur.pData$geo_accession[supp.files == "NONE"]),
-            " are at fault. If desired, change the update_annotation function for", cur.eset.name,
-            " to remove these samples, and then the raw data can be processed.")
+            Specifically, files from ", toString(cur.pData$geo_accession[supp.files == "NONE"]),
+            " are at missing. These files will be skipped when processing the data.")
   }
   
   cur.ds.processing.func.name <- paste0("ProcessData_", cur.eset.name)
@@ -70,7 +77,7 @@ ProcessRawGEOData <- function(cur.eset, cache.folder, expt.annot, verbose=T) {
     cur.processing.func.name <- cur.ds.processing.func.name
   } else {
     
-    is.affy.file <- all(grepl("\\.cel$|\\.cel\\.", supp.files, ignore.case = TRUE))
+    is.affy.file <- all(grepl("\\.cel$|\\.cel\\.|^none$", supp.files, ignore.case = TRUE))
     
     if (is.affy.file) {
       cur.platform.processing.func.name <- "ProcessData_affy" 
@@ -80,7 +87,7 @@ ProcessRawGEOData <- function(cur.eset, cache.folder, expt.annot, verbose=T) {
     
     if (!exists(cur.platform.processing.func.name)) {
       ##this print statement is not entirely accurate?
-      if (verbose) {cat("Raw data not available for '", cur.eset.name, "'. ",
+      if (verbose) {cat("Raw data processing function not available for '", cur.eset.name, "'. ",
                         "Using processed data for this data set.\n", sep="")}
       warning("Raw data processing function not available for '", 
               cur.eset.name, "'. ",
