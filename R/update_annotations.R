@@ -10,7 +10,7 @@
 # original pData object stored in notes(cur.eset)$original.pData, and use this as
 # the basis for making a new pData object which is then placed in pData(cur.eset).
 # By always starting from the original pData, then the function can be called
-# mulitple times sequentially with and produce identical results (which may not
+# mulitple times sequentially and produce identical results (which may not
 # be the case if it were to start with pData(eset)).  notes(cur.eset)$original.pData
 # should generally not be modified (see below).  cur.eset is return from the
 # functions.
@@ -50,6 +50,43 @@ get.interesting.annot.cols <- function(annot) {
   }
   return(annot.summary)
 }
+
+
+UpdateAnnotations_CSV <- function(cur.eset, annot.csv) {
+  if (!file.exists(annot.csv)) {
+    return(NULL)
+  }
+  
+  new.annot <- read.csv(annot.csv, stringsAsFactors=F)
+  rownames(new.annot) <- new.annot$geo_accession
+  
+  annot <- notes(cur.eset)$original.pData
+
+  if (!all(rownames(new.annot) %in% rownames(annot))) {
+    warning("Annotation csv ", annot.csv, 
+            " contains samples missing from the eset.  ",
+            "Annotations are not updated for ", notes(cur.eset)$name)
+    return(NULL)
+  }
+    
+  if (!all(rownames(annot) %in% rownames(new.annot))) {
+    num.missing <- sum(!(rownames(annot) %in% rownames(new.annot))) 
+    warning(paste0(num.missing, " samples from ", notes(cur.eset)$name, 
+                   " were excluded in the annotation csv ",
+                   annot.csv, ".  These samples will be dropped."))
+    cur.eset <- cur.eset[,rownames(new.annot)]
+    annot <- annot[rownames(new.annot),]
+    notes(cur.eset)$original.pData <- annot
+    
+  }
+  
+  new.annot <- new.annot[rownames(annot), ,drop=F]
+  
+  pData(cur.eset) <- new.annot
+  
+  return(cur.eset)
+}
+
 
 
 UpdateAnnotations_GSE42296_GPL6244 <- function(cur.eset) {
