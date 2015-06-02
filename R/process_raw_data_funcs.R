@@ -154,19 +154,14 @@ ProcessRawGEOData <- function(cur.eset, cache.folder, expt.annot, verbose=T) {
   # just in case, run normalizePath() to clean up the file paths
   cur.gsm.files <- normalizePath(cur.gsm.files)
   #run original processing function
-
   tmp.eset <- tryCatch({ 
     eval(parse(text=paste0(cur.processing.func.name,
                            "(cur.gsm.files, cur.eset, expt.annot=expt.annot)")))
-  }, warning = function(war){
-    print(paste("Warning: ", war))
-    if (verbose) {cat("A warning occurred while processing '", cur.eset.name, "'. ",
-                      "Using processed data for this data set.\n", sep="")}
-    return(NULL)
   }, error = function(err){
     print(paste("Error: ", err))
     if (verbose) {cat("A error occurred while processing '", cur.eset.name, "'. ",
-                      "Using processed data for this data set.\n", sep="")}
+                      "Using processed data for this data set.\n", sep="")
+    }
     return(NULL)
   })
   
@@ -260,6 +255,8 @@ ProcessData_affy <- function(data.files, processed.eset, expt.annot) {
       warning("Cannot find Brainarray CDF for ",  cel.header$cdfName, ".  Using default CDF.")
       cdf.name <- NULL
       brainarray <- F
+    } else {
+      library(cdf.name, character.only=T)
     }
   } else {
     cdf.name <- NULL
