@@ -1,7 +1,7 @@
 library(affyio)
 library(affy)
 
-
+suppressWarnings(setInternet2(use = FALSE))
 
 # Will load from the local file system a list of esets matching the criteria specified
 # in expt.annot.
@@ -150,10 +150,12 @@ GetEsetName <- function(cur.eset) {
 # but not for any data already in local files.
 
 ##what other argument options are available for expt.annot?
-GetEset <- function(GSE.ID, eset.folder = "~/esets", 
+GetEset <- function(GSE.ID, eset.folder = "S:/Groups/R and D Group Documents/GEO_data/esets/", 
                     overwrite.existing=F,
                     cache.folder = normalizePath("~/../Downloads"),
                      expt.annot=list(data.source = "from_processed"),
+                    annot.csv.folder="S:/Groups/R and D Group Documents/GEO_data/sample_annotations/",
+                    feature.annotation.path="S:/Groups/R and D Group Documents/GEO_data/feature_annotations/",
                     verbose=T) {
  
   library("GEOquery")	
@@ -202,7 +204,7 @@ GetEset <- function(GSE.ID, eset.folder = "~/esets",
                             notes(cur.eset)$data.source <- "from_processed"
                             return(cur.eset)
                           })
-      
+
       # cur.esets will be a list of eset objects, one for each platform present 
       # in this geo entry. Rename them based on the platform
       platforms <- sapply(cur.esets,
@@ -230,6 +232,8 @@ GetEset <- function(GSE.ID, eset.folder = "~/esets",
                                         overwrite.existing=overwrite.existing,
                                         cache.folder = cache.folder,
                                         expt.annot = list(data.source="from_processed"),
+                                        annot.csv.folder=annot.csv.folder,
+                                        feature.annotation.path=feature.annotation.path,
                                         verbose=verbose) 
       if (verbose) {cat("Downloading and processing raw data for ", cur.GSE.ID, ".\n", sep="")}
       
@@ -251,7 +255,14 @@ GetEset <- function(GSE.ID, eset.folder = "~/esets",
 
     # we update annotations here so annotations get updated before we save to file
     cur.esets <- lapply(cur.esets,
-                    UpdateAnnotations)
+                    UpdateAnnotations,
+                    annot.csv.folder=annot.csv.folder)
+    
+    # map features to EGID if possible
+    cur.esets <- lapply(cur.esets,
+                        map.features.to.EGID,
+                        feature.annotation.path=feature.annotation.path,
+                        cache.folder=cache.folder)
     
     # save to file here instead of outside the loop so that when an eset is loaded
     # from an .RData file we aren't wasting time writing it back (because next()
@@ -275,7 +286,7 @@ GetEset <- function(GSE.ID, eset.folder = "~/esets",
 
 
 
-map.features.to.EGID <- function(cur.eset, platform=NULL, annotation.path="~/Datasets/Feature annotation files/", annotation.file=NULL) {
+map.features.to.EGID <- function(cur.eset, platform=NULL, feature.annotation.path="~/Datasets/Feature annotation files/", annotation.file=NULL, cache.folder="~/../Downloads") {
   
   # if we already have EGID in the feature annotations, then return immediately
   if ("EGID" %in% colnames(fData(cur.eset))) {
@@ -288,20 +299,26 @@ map.features.to.EGID <- function(cur.eset, platform=NULL, annotation.path="~/Dat
   
   # open annotation file from common location
   if (is.null(annotation.file)) {
-    annotation.file <- file.path(annotation.path, paste0(platform, ".csv"))
+    annotation.file <- file.path(feature.annotation.path, paste0(platform, ".csv"))
   }
   
   if (!file.exists(annotation.file)) {
-    warning("Annotation file '", annotation.file, "' ",
-            "does not exist.  The corresponding eset will be dropped.")
-    return(NULL)
+    annotation.file <- getGPLFile(cur.GPL=platform, 
+                                  feature.annotation.path=feature.annotation.path,
+                                  cache.folder=cache.folder)
+    if (is.null(annotation.file)) {
+      warning("Features are not mapped to EGIDs for ", 
+              GetEsetName(cur.eset))
+      return(cur.eset)
+    }
   }
   
   annot <- read.csv(annotation.file, stringsAsFactors=F)
   
   if (!("EGID" %in% colnames(annot))) {
-    stop("EGID column does not exist in feature annotation file ",
-         annotation.file)
+    warning("EGID column does not exist in feature annotation file ",
+         annotation.file, ".  Cannot map features to EGIDs.")
+    return(cur.eset)
   }
   
   if (!all(rownames(cur.eset) %in% annot[[1]])) {
@@ -321,16 +338,71 @@ map.features.to.EGID <- function(cur.eset, platform=NULL, annotation.path="~/Dat
 
 
 
-UpdateAnnotations <- function(cur.eset) {
+getGPLFile <- function(cur.GPL, feature.annotation.path, cache.folder = normalizePath("~/../Downloads")) {
   
+  GPL.obj <- tryCatch({
+    getGEO(cur.GPL, destdir=cache.folder)
+  },
+  error=function(err) {
+    print(paste("Error: ", err))
+    cat("A error occurred while downloading '", cur.GPL, "'.\n", sep="")
+    return(NULL)
+    
+  })
+  
+  if (is.null(GPL.obj)) return(NULL)
+
+  feat.annot.file <- file.path(feature.annotation.path,
+                               paste0(cur.GPL, ".csv"))
+  
+  updated.date <- Meta(GPL.obj)$last_update_date
+  
+  feat.annot <- GEOquery::Table(GPL.obj)
+  feat.annot$last_updated_date <- updated.date
+  
+  EGID.col <- grep("EGID|ENTREZ_GENE_ID", colnames(feat.annot))
+
+  if (length(EGID.col)!=1) {
+    cat("Unable to determine EGID column from ", cur.GPL, ". Please manually modify ",
+        feat.annot.file, " by labeling the EGID column.\n", sep="")
+                  
+    write.csv(feat.annot, 
+              file=feat.annot.file,
+              row.names=F)
+    
+    return(NULL)
+  } 
+  feat.annot$EGID <- feat.annot[[EGID.col]]
+  write.csv(feat.annot, 
+            file=feat.annot.file,
+            row.names=F)
+  
+  return(feat.annot.file)  
+}
+
+
+UpdateAnnotations <- function(cur.eset, annot.csv.folder) {
+
   cur.eset.name <- notes(cur.eset)$name
   
   annot.update.func.name <- paste0("UpdateAnnotations_", cur.eset.name)
-  
+  annot.update.csv <- file.path(annot.csv.folder,
+                                paste0(cur.eset.name, ".csv"))
+  # set the tmp.eset to NULL so we can easily tell if we call a function to update
+  # the annotations
+  tmp.eset <- NULL
   if (exists(annot.update.func.name)) {
     tmp.eset <- eval(parse(text=paste0(annot.update.func.name,
                                        "(cur.eset)")))
-    
+    if (file.exists(annot.update.csv)) {
+      warning(paste0("Using function ", annot.update.func.name, "() instead of", 
+                     " file ", annot.update.csv, " to update annotations."))
+    }
+  } else if (file.exists(annot.update.csv)) {
+    tmp.eset <- UpdateAnnotations_CSV(cur.eset, annot.update.csv)
+  }
+  
+  if (!is.null(tmp.eset)) {
     # make sure that the number of rows in pData(tmp.eset) and 
     # notes(tmp.eset)$original.pData are the same as the number of columns/samples 
     # in tmp.eset
@@ -369,63 +441,68 @@ UpdateAnnotations <- function(cur.eset) {
     
 
   } else {
-    cat("\nNo annotation processing file exists for ", cur.eset.name, sep="")
+    cat("\nNo annotation processing file/function exists for ", cur.eset.name, ".",
+        "  Saving phenoData to ", annot.update.csv, "\n",sep="")
+    cur.eset.name <- GetEsetName(cur.eset)
+    write.csv(pData(cur.eset), 
+              file=annot.update.csv,
+              row.names=F)
   }
   return(cur.eset)
 }
 
 
 
-# generic function for downloading data files from the internet
-downloadData <- function(path.to.data, name, folder=NULL, overwrite=FALSE, md5=NULL) {
-  
-  # TODO
-  # put in update functionality - how to determine file size?
-  # determine whether data is zipped or tar.gz and unpack it
-  # how to associate annotation with this file?
-  
-  if(!is.null(md5) && file.exists(md5)){ # error without shortcircuit
-    md5 <- read.delim2(md5)
-  }
-  
-  # check if file exists - if it does then read it and download data
-  if(file.exists(path.to.data)){
-    print("Assuming input is a text file of URLs to download")
-    # read text file
-    urls <- read.delim2(path.to.data)
-    
-    for(i in 1:length(urls)){
-      fname <- unlist(strsplit(url[i], "/", fixed=TRUE))
-      fname <- fname[length(fname)]
-      
-      # if we should not overwrite file, then check to see if it exists in the current location
-      if(!overwrite){
-        logic <- file.exists(paste0(ifelse(is.null(folder), getwd(), folder), "/", fname))
-        if(logic) stop("Stopping because overwrite=FALSE and the file already exists")
-      }
-      download.file(url[i], destfile=paste0(ifelse(is.null(folder), getwd(), folder), "/", fname))
-      
-      if(!is.null(md5)){
-        stopifnot(md5sum(paste0(ifelse(is.null(folder), getwd(), folder), "/", fname, ))==md5[i])
-      }
-    }
-  } else {
-    print("Assuming input is URL to download")
-    fname <- unlist(strsplit(path.to.data, "/", fixed=TRUE))
-    fname <- fname[length(fname)]
-    
-    # if we should not overwrite file, then check to see if it exists in the current location
-    if(!overwrite){
-      logic <- file.exists(paste0(ifelse(is.null(folder), getwd(), folder), "/", fname))
-      if(logic) stop("Stopping because overwrite=FALSE and the file already exists")
-    }
-    
-    download.file(path.to.data, destfile=paste0(ifelse(is.null(folder), getwd(), folder), "/", fname))
-    
-    if(!is.null(md5)){
-      stopifnot(md5sum(paste0(ifelse(is.null(folder), getwd(), folder), "/", fname, ))==md5)
-    }
-  }
-  return(NULL)
-}
+# # generic function for downloading data files from the internet
+# downloadData <- function(path.to.data, name, folder=NULL, overwrite=FALSE, md5=NULL) {
+#   
+#   # TODO
+#   # put in update functionality - how to determine file size?
+#   # determine whether data is zipped or tar.gz and unpack it
+#   # how to associate annotation with this file?
+#   
+#   if(!is.null(md5) && file.exists(md5)){ # error without shortcircuit
+#     md5 <- read.delim2(md5)
+#   }
+#   
+#   # check if file exists - if it does then read it and download data
+#   if(file.exists(path.to.data)){
+#     print("Assuming input is a text file of URLs to download")
+#     # read text file
+#     urls <- read.delim2(path.to.data)
+#     
+#     for(i in 1:length(urls)){
+#       fname <- unlist(strsplit(url[i], "/", fixed=TRUE))
+#       fname <- fname[length(fname)]
+#       
+#       # if we should not overwrite file, then check to see if it exists in the current location
+#       if(!overwrite){
+#         logic <- file.exists(paste0(ifelse(is.null(folder), getwd(), folder), "/", fname))
+#         if(logic) stop("Stopping because overwrite=FALSE and the file already exists")
+#       }
+#       download.file(url[i], destfile=paste0(ifelse(is.null(folder), getwd(), folder), "/", fname))
+#       
+#       if(!is.null(md5)){
+#         stopifnot(md5sum(paste0(ifelse(is.null(folder), getwd(), folder), "/", fname, ))==md5[i])
+#       }
+#     }
+#   } else {
+#     print("Assuming input is URL to download")
+#     fname <- unlist(strsplit(path.to.data, "/", fixed=TRUE))
+#     fname <- fname[length(fname)]
+#     
+#     # if we should not overwrite file, then check to see if it exists in the current location
+#     if(!overwrite){
+#       logic <- file.exists(paste0(ifelse(is.null(folder), getwd(), folder), "/", fname))
+#       if(logic) stop("Stopping because overwrite=FALSE and the file already exists")
+#     }
+#     
+#     download.file(path.to.data, destfile=paste0(ifelse(is.null(folder), getwd(), folder), "/", fname))
+#     
+#     if(!is.null(md5)){
+#       stopifnot(md5sum(paste0(ifelse(is.null(folder), getwd(), folder), "/", fname, ))==md5)
+#     }
+#   }
+#   return(NULL)
+# }
 
