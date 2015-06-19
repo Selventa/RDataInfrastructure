@@ -59,6 +59,10 @@ LoadEset <- function(GSE.ID, eset.folder = "~/esets",
                       cur.GSE.ID, " in ", cur.file, ". Loading from_processed eset.")
         cat(msg, "\n")
         warning(msg)
+        cur.file.expt.annot <- expt.annot
+        cur.file.expt.annot$data.source <- "from_processed"
+      } else {
+        cur.file.expt.annot <- expt.annot
       }
       
       cur.file.esets <- list()
@@ -67,7 +71,7 @@ LoadEset <- function(GSE.ID, eset.folder = "~/esets",
         # for those expt.annot fields that are captured in the current eset (ie
         # those that are relevant and were inserted by the data processing function)
         # look for a match
-        tmp.expt.annot <- expt.annot[names(expt.annot) %in% names(notes(cur.tmp.eset))]
+        tmp.expt.annot <- cur.file.expt.annot[names(cur.file.expt.annot) %in% names(notes(cur.tmp.eset))]
         expt.annot.matches <- 
           identical(notes(cur.tmp.eset)[names(tmp.expt.annot)],
                     tmp.expt.annot)
@@ -196,7 +200,7 @@ GetEset <- function(GSE.ID, eset.folder = "S:/Groups/R and D Group Documents/GEO
       if (verbose) {cat("Downloading processed data for ", cur.GSE.ID, ".\n", sep="")}
       
       # call function from geoQuery package to get processed data from GEO
-      cur.esets <- getGEO(cur.GSE.ID, destdir=cache.folder, GSEMatrix=T, getGPL=F)
+      cur.esets <- getGEO_retry(cur.GSE.ID, destdir=cache.folder, GSEMatrix=T, getGPL=F)
 
       # label each as coming from processed data
       cur.esets <- lapply(cur.esets,
@@ -284,7 +288,29 @@ GetEset <- function(GSE.ID, eset.folder = "S:/Groups/R and D Group Documents/GEO
 }
 
 
-
+ getGEO_retry <- function(..., nretry=3, tdelay=3) {
+  
+  for (cur.try in 1:nretry) {
+    cur.eset <- 
+      tryCatch({
+        getGEO(...)
+        }, error=function(e) {
+               e
+             })
+    if (!("simpleError" %in% class(cur.eset))) {
+      break
+    }
+    Sys.sleep(tdelay)
+    print("RETRYING")
+  }
+  
+  if (("simpleError" %in% class(cur.eset))) {
+    stop(cur.eset)
+  }
+  
+  return(cur.eset)
+  
+}
 
 map.features.to.EGID <- function(cur.eset, platform=NULL, feature.annotation.path="~/Datasets/Feature annotation files/", annotation.file=NULL, cache.folder="~/../Downloads") {
   
@@ -341,7 +367,7 @@ map.features.to.EGID <- function(cur.eset, platform=NULL, feature.annotation.pat
 getGPLFile <- function(cur.GPL, feature.annotation.path, cache.folder = normalizePath("~/../Downloads")) {
   
   GPL.obj <- tryCatch({
-    getGEO(cur.GPL, destdir=cache.folder)
+    getGEO_retry(cur.GPL, destdir=cache.folder)
   },
   error=function(err) {
     print(paste("Error: ", err))
@@ -358,9 +384,11 @@ getGPLFile <- function(cur.GPL, feature.annotation.path, cache.folder = normaliz
   updated.date <- Meta(GPL.obj)$last_update_date
   
   feat.annot <- GEOquery::Table(GPL.obj)
+  if (nrow(feat.annot)==0) {return(NULL)}  # this happens for GPL9052 - not sure why
+  
   feat.annot$last_updated_date <- updated.date
   
-  EGID.col <- grep("EGID|ENTREZ_GENE_ID", colnames(feat.annot))
+  EGID.col <- grep("EGID|ENTREZ_GENE_ID|Entrez_Gene_ID", colnames(feat.annot))
 
   if (length(EGID.col)!=1) {
     cat("Unable to determine EGID column from ", cur.GPL, ". Please manually modify ",
