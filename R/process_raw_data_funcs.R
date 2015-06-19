@@ -34,6 +34,7 @@
 
 
 ProcessRawGEOData <- function(cur.eset, cache.folder, expt.annot, verbose=T) {
+
   ##should use getesetname here and/or source load_data_funcs?
   cur.eset.name <- notes(cur.eset)$name
   # get the pData from the eset, so we can keep use the same annotations 
@@ -55,7 +56,8 @@ ProcessRawGEOData <- function(cur.eset, cache.folder, expt.annot, verbose=T) {
   # get the names of the supp files to see if they are affy cel files
   supp.files <- as.character(cur.pData$supplementary_file)
   
-  if (all(toupper(supp.files) == "NONE")){
+  missing.sup.files <- toupper(supp.files) == "NONE"
+  if (all(missing.sup.files)){
     if (verbose) {cat("Raw data not available for '", cur.eset.name, "'. ",
                       "Using processed data for this data set.\n", sep="")}
     warning("Raw data not available for '", cur.eset.name, "'. ",
@@ -63,10 +65,13 @@ ProcessRawGEOData <- function(cur.eset, cache.folder, expt.annot, verbose=T) {
     return(cur.eset)
     
   }
-  if (any(toupper(supp.files) == "NONE")){
+  if (any(missing.sup.files)){
     warning("Some raw data is missing from GEO for ", cur.eset.name, ".
             Specifically, files from ", toString(cur.pData$geo_accession[supp.files == "NONE"]),
             " are at missing. These files will be skipped when processing the data.")
+    
+    cur.pData <- cur.pData[!missing.sup.files, ,drop=F]
+    supp.files <- supp.files[!missing.sup.files]
   }
   
   cur.ds.processing.func.name <- paste0("ProcessData_", cur.eset.name)
@@ -86,7 +91,6 @@ ProcessRawGEOData <- function(cur.eset, cache.folder, expt.annot, verbose=T) {
     }
     
     if (!exists(cur.platform.processing.func.name)) {
-      ##this print statement is not entirely accurate?
       if (verbose) {cat("Raw data processing function not available for '", cur.eset.name, "'. ",
                         "Using processed data for this data set.\n", sep="")}
       warning("Raw data processing function not available for '", 
@@ -108,10 +112,10 @@ ProcessRawGEOData <- function(cur.eset, cache.folder, expt.annot, verbose=T) {
   downloaded.files <- 
     sapply(1:nrow(cur.pData),
            function(i) {
-             if (file.exists(cur.gsm.files[i])) {
+             if (file.exists(cur.gsm.files[i]) && file.info(cur.gsm.files[i])$size!=0) {
                return(cur.gsm.files[i])
              } else {
-               return(rownames(getGEOSuppFiles(cur.pData$geo_accession[i], 
+               return(rownames(getGEOSuppFiles_retry(cur.pData$geo_accession[i], 
                                                baseDir=cache.folder)))
              }
            })
@@ -168,7 +172,10 @@ ProcessRawGEOData <- function(cur.eset, cache.folder, expt.annot, verbose=T) {
   if (is.null(tmp.eset)) {
     return(cur.eset)
   }
+
   
+# TODO: WHEN SUPP FILES ARE MISSING, ESET IS GENERATED WITHOUT THEM.  THIS TRIGGERS
+# THE FIRST WARNING BELOW AND PROCESSED DATA IS USED INSTEAD - UPDATE THE PDATA???
   
   # make sure that the number of rows in pData(tmp.eset) and 
   # notes(tmp.eset)$original.pData are the same as the number of columns/samples 
@@ -180,7 +187,7 @@ ProcessRawGEOData <- function(cur.eset, cache.folder, expt.annot, verbose=T) {
     return(cur.eset)
   } else if(nrow(pData(tmp.eset)) != ncol(tmp.eset)) {
     warning(paste0(cur.processing.func.name, "() did not maintain the same number",
-                   " of samples in pData the eset.  Using processed data", 
+                   " of samples in pData AND the eset.  Using processed data", 
                    " for ", cur.eset.name))
     return(cur.eset)
   } else {
@@ -207,7 +214,34 @@ ProcessRawGEOData <- function(cur.eset, cache.folder, expt.annot, verbose=T) {
 
 
 
-ProcessData_affy <- function(data.files, processed.eset, expt.annot) {
+getGEOSuppFiles_retry <- function(..., nretry=10, tdelay=5) {
+  
+  for (cur.try in 1:nretry) {
+    sup.file.info <- 
+      tryCatch({
+        getGEOSuppFiles(...)
+      }, error=function(e) {
+        e
+      })
+    if (!is.null(sup.file.info) &&
+          !("simpleError" %in% class(sup.file.info)) && 
+          all(sup.file.info$size!=0)) {
+      break
+    }
+    Sys.sleep(tdelay)
+    print("RETRYING")
+  }
+  
+  if (("simpleError" %in% class(sup.file.info))) {
+    stop(sup.file.info)
+  }
+  
+  return(sup.file.info)
+  
+}
+
+
+ProcessData_affy <- function(data.files, processed.eset, expt.annot, cdf.name=NULL) {
   
   require(affyio)
   require(affy)
@@ -223,43 +257,45 @@ ProcessData_affy <- function(data.files, processed.eset, expt.annot) {
     brainarray <- expt.annot$brainarray
   }
   
-  # get the chip type
-  cel.header <- read.celfile.header(data.files[1])
-
-  # get the default cdf name, and clean it up a bit
-  cdf.name <- cel.header$cdfName
-  cdf.name <- gsub("[^[:alnum:]]","",cel.header$cdfName)
-  
-  # if it's an exon array, then we need to use brainarray
-  if (grepl("HuGene|HuEx|MoGene|MoEx|RaGene|RaEx", cdf.name)) {
+  if (is.null(cdf.name)) {
+    # get the chip type
+    cel.header <- read.celfile.header(data.files[1])
     
-    brainarray <- T
+    # get the default cdf name, and clean it up a bit
+    cdf.name <- cel.header$cdfName
+    cdf.name <- gsub("[^[:alnum:]]","",cel.header$cdfName)
     
-    # in these cases we also need to modify the cdfName in the header slightly 
-    # so we can match it with the approrpriate brainarray cdf
-    cdf.name <- gsub("v1","",cdf.name)
-    cdf.name <- gsub("v2","",cdf.name)
-    
-  }
-    
-  if (brainarray) {
-    
-    # map the cdf name to the brainarray cdf
-    cdf.name <- paste(tolower(cdf.name),c("hs","mm","rn"),"entrezgcdf",sep="")
-    
-    # make sure that the brainarray cdf is installed
-    avail.pkg <- installed.packages()[,"Package"]
-    cdf.name <- intersect(cdf.name,avail.pkg)
-    
-    if(length(cdf.name) != 1) {
-      warning("Cannot find Brainarray CDF for ",  cel.header$cdfName, ".  Using default CDF.")
-      cdf.name <- NULL
-      brainarray <- F
-    } else {
-      library(cdf.name, character.only=T)
+    # if it's an exon array, then we need to use brainarray
+    if (grepl("HuGene|HuEx|MoGene|MoEx|RaGene|RaEx", cdf.name)) {
+      
+      brainarray <- T
+      
+      # in these cases we also need to modify the cdfName in the header slightly 
+      # so we can match it with the approrpriate brainarray cdf
+      cdf.name <- gsub("v1","",cdf.name)
+      cdf.name <- gsub("v2","",cdf.name)
+      
     }
-  } else {
-    cdf.name <- NULL
+      
+    if (brainarray) {
+      
+      # map the cdf name to the brainarray cdf
+      cdf.name <- paste(tolower(cdf.name),c("hs","mm","rn"),"entrezgcdf",sep="")
+      
+      # make sure that the brainarray cdf is installed
+      avail.pkg <- installed.packages()[,"Package"]
+      cdf.name <- intersect(cdf.name,avail.pkg)
+      
+      if(length(cdf.name) != 1) {
+        warning("Cannot find Brainarray CDF for ",  cel.header$cdfName, ".  Using default CDF.")
+        cdf.name <- NULL
+        brainarray <- F
+      } else {
+        library(cdf.name, character.only=T)
+      }
+    } else {
+      cdf.name <- NULL
+    }
   }
   
   cur.eset <- justRMA(filenames=data.files,
@@ -294,3 +330,9 @@ ProcessData_GSE42568_GPL570 <- function(data.files, processed.eset, expt.annot){
   return(ProcessData_affy(data.files.corrected, processed.eset.corrected, expt.annot))
   
 }
+
+
+ProcessData_GSE10191_GPL5760 <- function(...){
+  ProcessData_affy(..., cdf.name="hgu133plus2hsentrezgcdf")
+}
+
