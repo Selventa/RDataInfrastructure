@@ -1,7 +1,9 @@
 library(affyio)
 library(affy)
 
-suppressWarnings(setInternet2(use = FALSE))
+if (Sys.info()["sysname"] == "Windows") {
+  suppressWarnings(setInternet2(use = FALSE))  
+}
 
 # Will load from the local file system a list of esets matching the criteria specified
 # in expt.annot.
