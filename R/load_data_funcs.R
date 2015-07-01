@@ -211,6 +211,22 @@ GetEset <- function(GSE.ID, eset.folder = "S:/Groups/R and D Group Documents/GEO
                             return(cur.eset)
                           })
 
+      cur.esets <- 
+        lapply(cur.esets, 
+             function(cur.eset) {
+               cur.exprs <- exprs(cur.eset)
+               if (max(cur.exprs, na.rm = T)>30) {
+                 cat("Assuming expression values are not logged.  Logging them now.\n")
+                 if (any(cur.exprs[!is.na(cur.exprs)] <= 0)) {
+                   cat("Intensities less than or equal to zero are replaced with half of the smalles positive intensity.\n")
+                   cur.exprs[!is.na(cur.exprs) & cur.exprs <=0] <- min(cur.exprs[!is.na(cur.exprs) & cur.exprs>0])/2
+                 }
+                 cur.exprs <- log2(cur.exprs)
+                 exprs(cur.eset) <- cur.exprs
+               }
+               return(cur.eset)
+             })
+      
       # cur.esets will be a list of eset objects, one for each platform present 
       # in this geo entry. Rename them based on the platform
       platforms <- sapply(cur.esets,
