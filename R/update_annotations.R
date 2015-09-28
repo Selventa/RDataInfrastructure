@@ -177,91 +177,91 @@ UpdateAnnotations_GSE17755_GPL1291 <- function(cur.eset) {
   
 }
 
-UpdateAnnotations_GSE16879_GPL570 <- function(cur.eset) {
-  
-  annot <- notes(cur.eset)$original.pData
-  new.annot <- data.frame(row.names=rownames(annot))
-  
-  
-  # design column
-  new.annot$DESIGN_source_name_ch <- annot$source_name_ch1
-  
-  UCR <- (new.annot$DESIGN_source_name_ch == 
-            "Colonic mucosal biopsy from UC responder before first infliximab treatment")
-  UCNR <- (new.annot$DESIGN_source_name_ch == 
-             "Colonic mucosal biopsy from UC non-responder before first infliximab treatment")
-  colon_control <- (new.annot$DESIGN_source_name_ch == 
-                      "Colonic mucosal biopsy from control individual")
-  
-  CDcR <- (new.annot$DESIGN_source_name_ch == 
-             "Colonic mucosal biopsy from CDc responder before first infliximab treatment")
-  CDcNR <- (new.annot$DESIGN_source_name_ch == 
-              "Colonic mucosal biopsy from CDc non-responder before first infliximab treatment")
-  
-  CDiR <- (new.annot$DESIGN_source_name_ch == 
-             "Ileal mucosal biopsy from CDi responder before first infliximab treatment")
-  CDiNR <- (new.annot$DESIGN_source_name_ch == 
-              "Ileal mucosal biopsy from CDi non-responder before first infliximab treatment")
-  
-  ilium_control <- (new.annot$DESIGN_source_name_ch == 
-                      "Ileal mucosal biopsy from control individual")
-  
-  
-  lapply(list(UCR, UCNR, colon_control, CDcR, CDcNR, CDiR, CDiNR, ilium_control),
-         function(x) stopifnot(any(x)))
-  
-  #contrast between normal and UCR before
-  new.annot$CONTRAST_UCRbefore_Normal <- rep(0, times=nrow(new.annot))
-  new.annot$CONTRAST_UCRbefore_Normal[UCR] <- 1
-  new.annot$CONTRAST_UCRbefore_Normal[colon_control] <- -1
-  
-  
-  #contrast between normal and UCNR before
-  new.annot$CONTRAST_UCNRbefore_Normal <- rep(0, times=nrow(new.annot))
-  new.annot$CONTRAST_UCNRbefore_Normal[UCNR] <- 1
-  new.annot$CONTRAST_UCNRbefore_Normal[colon_control] <- -1
-  
-  #contrast between normal and CDcR before
-  new.annot$CONTRAST_CDcRbefore_Normal <- rep(0, times=nrow(new.annot))
-  new.annot$CONTRAST_CDcRbefore_Normal[CDcR] <- 1
-  new.annot$CONTRAST_CDcRbefore_Normal[colon_control] <- -1
-  
-  #contrast between normal and CDcNR before
-  new.annot$CONTRAST_CDcNRbefore_Normal <- rep(0, times=nrow(new.annot))
-  new.annot$CONTRAST_CDcNRbefore_Normal[CDcNR] <- 1
-  new.annot$CONTRAST_CDcNRbefore_Normal[colon_control] <- -1
-  
-  #contrast between ileal normal and CDiR before
-  new.annot$CONTRAST_CDiRbefore_ilNormal <- rep(0, times=nrow(new.annot))
-  new.annot$CONTRAST_CDiRbefore_ilNormal[CDiR] <- 1
-  new.annot$CONTRAST_CDiRbefore_ilNormal[ilium_control] <- -1
-  
-  #contrast between ileal normal and CDiNR before
-  new.annot$CONTRAST_CDiNRbefore_ilNormal <- rep(0, times=nrow(new.annot))
-  new.annot$CONTRAST_CDiNRbefore_ilNormal[CDiNR] <- 1
-  new.annot$CONTRAST_CDiNRbefore_ilNormal[ilium_control] <- -1
-  
-
-  #contrast between normal and UC (R+NR) before
-  new.annot$CONTRAST_UCbefore_Normal <- rep(0, times=nrow(new.annot))
-  new.annot$CONTRAST_UCbefore_Normal[UCR | UCNR] <- 1
-  new.annot$CONTRAST_UCbefore_Normal[colon_control] <- -1
-  
-  #contrast between normal and CDc (R+NR) before
-  new.annot$CONTRAST_CDcbefore_Normal <- rep(0, times=nrow(new.annot))
-  new.annot$CONTRAST_CDcbefore_Normal[CDcR | CDcNR] <- 1
-  new.annot$CONTRAST_CDcbefore_Normal[colon_control] <- -1
-  
-  #contrast between normal and CDi (R+NR) before
-  new.annot$CONTRAST_CDibefore_Normal <- rep(0, times=nrow(new.annot))
-  new.annot$CONTRAST_CDibefore_Normal[CDiR | CDiNR] <- 1
-  new.annot$CONTRAST_CDibefore_Normal[ilium_control] <- -1
-
-  pData(cur.eset) <- new.annot
-  
-  return(cur.eset)
-  
-}
+# UpdateAnnotations_GSE16879_GPL570 <- function(cur.eset) {
+#   
+#   annot <- notes(cur.eset)$original.pData
+#   new.annot <- data.frame(row.names=rownames(annot))
+#   
+#   
+#   # design column
+#   new.annot$DESIGN_source_name_ch <- annot$source_name_ch1
+#   
+#   UCR <- (new.annot$DESIGN_source_name_ch == 
+#             "Colonic mucosal biopsy from UC responder before first infliximab treatment")
+#   UCNR <- (new.annot$DESIGN_source_name_ch == 
+#              "Colonic mucosal biopsy from UC non-responder before first infliximab treatment")
+#   colon_control <- (new.annot$DESIGN_source_name_ch == 
+#                       "Colonic mucosal biopsy from control individual")
+#   
+#   CDcR <- (new.annot$DESIGN_source_name_ch == 
+#              "Colonic mucosal biopsy from CDc responder before first infliximab treatment")
+#   CDcNR <- (new.annot$DESIGN_source_name_ch == 
+#               "Colonic mucosal biopsy from CDc non-responder before first infliximab treatment")
+#   
+#   CDiR <- (new.annot$DESIGN_source_name_ch == 
+#              "Ileal mucosal biopsy from CDi responder before first infliximab treatment")
+#   CDiNR <- (new.annot$DESIGN_source_name_ch == 
+#               "Ileal mucosal biopsy from CDi non-responder before first infliximab treatment")
+#   
+#   ilium_control <- (new.annot$DESIGN_source_name_ch == 
+#                       "Ileal mucosal biopsy from control individual")
+#   
+#   
+#   lapply(list(UCR, UCNR, colon_control, CDcR, CDcNR, CDiR, CDiNR, ilium_control),
+#          function(x) stopifnot(any(x)))
+#   
+#   #contrast between normal and UCR before
+#   new.annot$CONTRAST_UCRbefore_Normal <- rep(0, times=nrow(new.annot))
+#   new.annot$CONTRAST_UCRbefore_Normal[UCR] <- 1
+#   new.annot$CONTRAST_UCRbefore_Normal[colon_control] <- -1
+#   
+#   
+#   #contrast between normal and UCNR before
+#   new.annot$CONTRAST_UCNRbefore_Normal <- rep(0, times=nrow(new.annot))
+#   new.annot$CONTRAST_UCNRbefore_Normal[UCNR] <- 1
+#   new.annot$CONTRAST_UCNRbefore_Normal[colon_control] <- -1
+#   
+#   #contrast between normal and CDcR before
+#   new.annot$CONTRAST_CDcRbefore_Normal <- rep(0, times=nrow(new.annot))
+#   new.annot$CONTRAST_CDcRbefore_Normal[CDcR] <- 1
+#   new.annot$CONTRAST_CDcRbefore_Normal[colon_control] <- -1
+#   
+#   #contrast between normal and CDcNR before
+#   new.annot$CONTRAST_CDcNRbefore_Normal <- rep(0, times=nrow(new.annot))
+#   new.annot$CONTRAST_CDcNRbefore_Normal[CDcNR] <- 1
+#   new.annot$CONTRAST_CDcNRbefore_Normal[colon_control] <- -1
+#   
+#   #contrast between ileal normal and CDiR before
+#   new.annot$CONTRAST_CDiRbefore_ilNormal <- rep(0, times=nrow(new.annot))
+#   new.annot$CONTRAST_CDiRbefore_ilNormal[CDiR] <- 1
+#   new.annot$CONTRAST_CDiRbefore_ilNormal[ilium_control] <- -1
+#   
+#   #contrast between ileal normal and CDiNR before
+#   new.annot$CONTRAST_CDiNRbefore_ilNormal <- rep(0, times=nrow(new.annot))
+#   new.annot$CONTRAST_CDiNRbefore_ilNormal[CDiNR] <- 1
+#   new.annot$CONTRAST_CDiNRbefore_ilNormal[ilium_control] <- -1
+#   
+# 
+#   #contrast between normal and UC (R+NR) before
+#   new.annot$CONTRAST_UCbefore_Normal <- rep(0, times=nrow(new.annot))
+#   new.annot$CONTRAST_UCbefore_Normal[UCR | UCNR] <- 1
+#   new.annot$CONTRAST_UCbefore_Normal[colon_control] <- -1
+#   
+#   #contrast between normal and CDc (R+NR) before
+#   new.annot$CONTRAST_CDcbefore_Normal <- rep(0, times=nrow(new.annot))
+#   new.annot$CONTRAST_CDcbefore_Normal[CDcR | CDcNR] <- 1
+#   new.annot$CONTRAST_CDcbefore_Normal[colon_control] <- -1
+#   
+#   #contrast between normal and CDi (R+NR) before
+#   new.annot$CONTRAST_CDibefore_Normal <- rep(0, times=nrow(new.annot))
+#   new.annot$CONTRAST_CDibefore_Normal[CDiR | CDiNR] <- 1
+#   new.annot$CONTRAST_CDibefore_Normal[ilium_control] <- -1
+# 
+#   pData(cur.eset) <- new.annot
+#   
+#   return(cur.eset)
+#   
+# }
 
 UpdateAnnotations_GSE6731_GPL8300 <- function(cur.eset) {
   
