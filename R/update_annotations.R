@@ -379,3 +379,134 @@ UpdateAnnotations_GSE13911_GPL570 <- function(cur.eset) {
   return(cur.eset)
   
 }
+
+
+UpdateAnnotations_GSE10893_GPL1390 <- function(cur.eset) {
+  
+  ## First, get the original pheno-data, and convert all of the factors into strings.
+  annot <- notes(cur.eset)$original.pData
+  annot <- data.frame(lapply(annot, as.character), stringsAsFactors = FALSE)
+  new.annot <- data.frame(row.names=rownames(annot), stringsAsFactors = FALSE)
+  
+  ## NOTE! Three samples have some misalignments in the phenotype table: GSM275775, GSM372557, & GSM372558
+  ## Fix these annotations manually.
+  next.sample <- match("GSM275775", annot$geo_accession)
+  annot$source_name_ch2[next.sample] <- annot$characteristics_ch2[next.sample]
+  annot$characteristics_ch2[next.sample] <- "age: --"
+  
+  
+  next.sample <- match("GSM372557", annot$geo_accession)
+  annot$source_name_ch2[next.sample] <- paste(annot$characteristics_ch2[next.sample], annot$characteristics_ch2.1[next.sample], sep=": ")
+  annot$characteristics_ch2[next.sample] <- ""
+  annot$characteristics_ch2.1[next.sample] <- ""
+  
+  
+  next.sample <- match("GSM372558", annot$geo_accession)
+  to.cols   <- c("characteristics_ch2",   "characteristics_ch2.1", "characteristics_ch2.4", "characteristics_ch2.5", "characteristics_ch2.6", "characteristics_ch2.7", "characteristics_ch2.8", "characteristics_ch2.9", "characteristics_ch2.10", "characteristics_ch2.11")
+  from.cols <- c("characteristics_ch2.1", "characteristics_ch2.2", "characteristics_ch2.3", "characteristics_ch2.4", "characteristics_ch2.5", "characteristics_ch2.6", "characteristics_ch2.7", "characteristics_ch2.8", "characteristics_ch2.9",  "characteristics_ch2.10")
+  annot[next.sample, to.cols] <- unlist(annot[next.sample, from.cols])
+  annot$characteristics_ch2.2[next.sample] <- ""
+  annot$characteristics_ch2.3[next.sample] <- ""
+  
+  
+  ## Clean up some of the annotations to make them more computable:
+  new.annot$title <- annot$title
+  new.annot$geo_accession <- annot$geo_accession
+  new.annot$sample_source <- annot$source_name_ch2  ## PROCESS THIS TO ONLTY CONTAIN ONE OF "breast tumor", "normal breast","lymph node met", "autopsy", or "autopsy - skin met". 
+  temp.idx <- grep("breast tumor", annot$source_name_ch2, ignore.case = TRUE)
+  new.annot$sample_source[temp.idx] <- "Breast Tumor"
+  
+  temp.idx <- grep("metastasis.*brain", annot$source_name_ch2, ignore.case = TRUE)
+  new.annot$sample_source[temp.idx] <- "Brain Metastasis"
+  
+  ## Manually reset this entry to be a breast tumor (it has "brain metastasis" in the name, but is a primary breast tumor).
+  new.annot$sample_source[new.annot$geo_accession == "GSM34432"] <- "Breast Tumor"
+  
+  temp.idx <- grep("Normal.*Breast", annot$source_name_ch2, ignore.case = TRUE)
+  new.annot$sample_source[temp.idx] <- "Normal Breast"
+  
+  ###########################################################################=
+  ## FINISH!!!  This is a rough state, and doesn't indicate which are from autopsy, or are the appropriate  ----
+  ##  combinations of Autopsy and metastasis.
+  ###########################################################################=
+  
+  
+  #######  FINISH!  #################
+  ## Now get the rest of the fields that I want and process them: ER/PR/HER2 statuses, PAM50/Claudin subtype.
+  ##  LATER: Get the following fields: Age, node status, grade, size, response (rfs & overall survival).
+  ##  ALSO, figure out who got what treatment!...  And was it before or after the gene expression measurment.
+  
+  new.annot$ER_status <- "-NA-"
+  new.annot$ER_status[annot$characteristics_ch2.1 == "er  (1=positive; 0=negative): 1"] <- "pos"
+  new.annot$ER_status[annot$characteristics_ch2.1 == "er  (1=positive; 0=negative): 0"] <- "neg"
+  
+  new.annot$PR_status <- "-NA-"
+  new.annot$PR_status[annot$characteristics_ch2.2 == "pgr  (1=positive; 0=negative): 1"] <- "pos"
+  new.annot$PR_status[annot$characteristics_ch2.2 == "pgr  (1=positive; 0=negative): 0"] <- "neg"
+  
+  new.annot$HER2_clin_status <- "-NA-"
+  new.annot$HER2_clin_status[annot$characteristics_ch2.3 == "her2 clinical status ihc/fish (1=positive; 0=negative): 1"] <- "pos"
+  new.annot$HER2_clin_status[annot$characteristics_ch2.3 == "her2 clinical status ihc/fish (1=positive; 0=negative): 0"] <- "neg"
+  
+  ## Get the PAM50 intrinsic subtype or claudin-low classification of each tumor.
+  new.annot$intrinsic_subtype <- gsub("pam50 predictions plus claudin-low classification (cell line predictor): ", 
+                                      "", 
+                                      annot$characteristics_ch2.11, 
+                                      fixed = TRUE)
+  
+  
+  ##--------------------------------------------------------=
+  ## Create the contrasts:
+  ##--------------------------------------------------------=
+  
+  ## Contrast for HER2 breast tumors (by IHC, not by PAM50).
+  new.annot$CONTRAST_HER2pos_vs_normal <- 0
+  new.annot$CONTRAST_HER2pos_vs_normal[ ((new.annot$HER2_clin_status == "pos") 
+                                         & (new.annot$sample_source == "Breast Tumor")) ] <- 1
+  new.annot$CONTRAST_HER2pos_vs_normal[ (new.annot$sample_source == "Normal Breast") ]    <- (-1)
+  
+  ## Contrast for hormone receptor positive (ER+ and/or PR+) vs normal.
+  new.annot$CONTRAST_HormoneRecepPos_vs_normal <- 0
+  new.annot$CONTRAST_HormoneRecepPos_vs_normal[ ( (new.annot$sample_source == "Breast Tumor")
+                                                  & ( ((new.annot$ER_status == "pos") 
+                                                       | (new.annot$PR_status == "pos"))
+                                                      & (new.annot$HER2_clin_status == "neg")) ) ] <- 1
+  new.annot$CONTRAST_HormoneRecepPos_vs_normal[ (new.annot$sample_source == "Normal Breast") ]     <- (-1)
+  
+  ## Contrast for LuminalA vs normal.
+  new.annot$CONTRAST_LumA_vs_normal <- 0
+  new.annot$CONTRAST_LumA_vs_normal[ ((new.annot$intrinsic_subtype == "LumA") 
+                                      & (new.annot$sample_source == "Breast Tumor")) ] <- 1
+  new.annot$CONTRAST_LumA_vs_normal[ (new.annot$sample_source == "Normal Breast") ]    <- (-1)
+  
+  ## Contrast for LuminalB vs normal.
+  new.annot$CONTRAST_LumB_vs_normal <- 0
+  new.annot$CONTRAST_LumB_vs_normal[ ((new.annot$intrinsic_subtype == "LumB") 
+                                      & (new.annot$sample_source == "Breast Tumor")) ] <- 1
+  new.annot$CONTRAST_LumB_vs_normal[ (new.annot$sample_source == "Normal Breast") ]    <- (-1)
+  
+  ## Contrast for (LuminalA and LuminalB) vs normal.  This should be roughly the 
+  ##  same as the hormone-receptor-positives vs normal, but just to be thorough.
+  new.annot$CONTRAST_LumA_and_LumB_vs_normal <- 0
+  new.annot$CONTRAST_LumA_and_LumB_vs_normal[ ((new.annot$intrinsic_subtype %in% c("LumA", "LumB")) 
+                                               & (new.annot$sample_source == "Breast Tumor")) ] <- 1
+  new.annot$CONTRAST_LumA_and_LumB_vs_normal[ (new.annot$sample_source == "Normal Breast") ]    <- (-1)
+  
+  ## Contrast for All breast tumors vs normal.
+  new.annot$CONTRAST_AllBreastTumors_vs_normal <- 0
+  new.annot$CONTRAST_AllBreastTumors_vs_normal[ (new.annot$sample_source == "Breast Tumor") ]  <- 1
+  new.annot$CONTRAST_AllBreastTumors_vs_normal[ (new.annot$sample_source == "Normal Breast") ] <- (-1)
+  
+  ## Contrast for Triple-negative breast tumors vs normal.
+  new.annot$TripleNegative_vs_normal <- 0
+  new.annot$TripleNegative_vs_normal[ ((new.annot$sample_source == "Breast Tumor") 
+                                       & (new.annot$ER_status == "neg") 
+                                       & (new.annot$PR_status == "neg") 
+                                       & (new.annot$HER2_clin_status == "neg")) ]  <- 1
+  new.annot$TripleNegative_vs_normal[ (new.annot$sample_source == "Normal Breast") ] <- (-1)
+  
+  
+  pData(cur.eset) <- new.annot
+  
+  return(cur.eset)
+}
