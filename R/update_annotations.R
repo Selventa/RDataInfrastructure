@@ -388,6 +388,9 @@ UpdateAnnotations_GSE10893_GPL1390 <- function(cur.eset) {
   annot <- data.frame(lapply(annot, as.character), stringsAsFactors = FALSE)
   new.annot <- data.frame(row.names=rownames(annot), stringsAsFactors = FALSE)
   
+  ##--------------------------------------------------------=
+  ## Fix misaligned annotations:
+  ##--------------------------------------------------------=
   ## NOTE! Three samples have some misalignments in the phenotype table: GSM275775, GSM372557, & GSM372558
   ## Fix these annotations manually.
   next.sample <- match("GSM275775", annot$geo_accession)
@@ -510,3 +513,38 @@ UpdateAnnotations_GSE10893_GPL1390 <- function(cur.eset) {
   
   return(cur.eset)
 }
+
+
+UpdateAnnotations_GSE5364_GPL96 <- function(cur.eset) {
+  ## Get the original pheno-data, and convert all of the factors into strings.
+  annot <- notes(cur.eset)$original.pData
+  annot <- data.frame(lapply(annot, as.character), stringsAsFactors = FALSE)
+  new.annot <- data.frame(row.names=rownames(annot), stringsAsFactors = FALSE)
+  ## Keep the geo-accession IDs for each entry just for unique identifiability and consistency.
+  new.annot$geo_accession <- annot$geo_accession
+  
+  ## Note - Data annotations appear to be well formatted.  No adjustments necessary!
+  
+  ##--------------------------------------------------------=
+  ## Create the contrast:
+  ## -----------=
+  ##  - We do not have subtype information for the breast tumors, so we can only
+  ##    compare All breast tumors vs breast normal tissue.
+  ##  - Note that there are other tumor tissue samples here, but we are only
+  ##    interested in Breast tumor-vs-normal for now.
+  ##--------------------------------------------------------=
+  ## Get the index for the breast tumors, and for the breast normals:
+  breast.tumor.idx <- grep(pattern = "Breast tumor", annot$title, ignore.case = TRUE)
+  breast.normal.idx <- grep(pattern = "Breast Normal", annot$title, ignore.case = TRUE)
+  
+  ## Contrast for All breast tumors vs normal.
+  new.annot$CONTRAST_AllBreastTumors_vs_normal <- 0
+  new.annot$CONTRAST_AllBreastTumors_vs_normal[ breast.tumor.idx ]  <- 1
+  new.annot$CONTRAST_AllBreastTumors_vs_normal[ breast.normal.idx ] <- (-1)
+  
+  
+  pData(cur.eset) <- new.annot
+  
+  return(cur.eset)
+}
+
