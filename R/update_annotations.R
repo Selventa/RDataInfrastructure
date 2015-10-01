@@ -548,3 +548,137 @@ UpdateAnnotations_GSE5364_GPL96 <- function(cur.eset) {
   return(cur.eset)
 }
 
+
+UpdateAnnotations_GSE14297_GPL6370 <- function(cur.eset) {
+  ## Get the original pheno-data, and convert all of the factors into strings.
+  annot <- notes(cur.eset)$original.pData
+  annot <- data.frame(lapply(annot, as.character), stringsAsFactors = FALSE)
+  new.annot <- data.frame(row.names=rownames(annot), stringsAsFactors = FALSE)
+  ## Keep the geo-accession IDs for each entry just for unique identifiability and consistency.
+  new.annot$geo_accession <- annot$geo_accession
+  
+  ## Data annotations appear to be well formatted.  No adjustments necessary!
+  
+  ##---------------------------------------------------------------------------=
+  ## Create the contrast:
+  ##-----------=
+  ##  - CONTRAST_PrimaryCRCTumor_vs_Normal = Compare primary colorectal tumors 
+  ##        versus normal colon epithelium.
+  ##  - CONTRAST_CRCLiverMets_vs_NormalLiver = Comparison of the liver metastases 
+  ##        (metastastases from primary CRC tumors) compared to normal liver tissue.
+  ##
+  ##-----------=
+  ##  * NOTE: Since the liver metastases are paired with the primary tumors, 
+  ##    there are more contrasts that we could investigate when not looking
+  ##    for positive controls.
+  ##---------------------------------------------------------------------------=
+  ## Get the index for the different tumors and normals:
+  primary.CRC.tumor.idx <- grep(pattern = "Primary Colorectal Cancer", annot$source_name_ch1, ignore.case = TRUE)
+  normal.colon.idx <- grep(pattern = "Normal Colon Epithelium", annot$source_name_ch1, ignore.case = TRUE)
+  liver.mets.idx <- grep(pattern = "Liver metastasis of Colorectal Cancer", annot$source_name_ch1, ignore.case = TRUE)
+  normal.liver.idx <- grep(pattern = "Normal Liver Tissue", annot$source_name_ch1, ignore.case = TRUE)
+  
+  ## Contrast for Primary Colorectal tumor vs normal colon.
+  new.annot$CONTRAST_PrimaryCRCTumor_vs_Normal <- 0
+  new.annot$CONTRAST_PrimaryCRCTumor_vs_Normal[ primary.CRC.tumor.idx ]  <- 1
+  new.annot$CONTRAST_PrimaryCRCTumor_vs_Normal[ normal.colon.idx ] <- (-1)
+  
+  ## Contrast for Liver metasteses vs normal liver.
+  new.annot$CONTRAST_CRCLiverMets_vs_NormalLiver <- 0
+  new.annot$CONTRAST_CRCLiverMets_vs_NormalLiver[ liver.mets.idx ]  <- 1
+  new.annot$CONTRAST_CRCLiverMets_vs_NormalLiver[ normal.liver.idx ] <- (-1)
+  
+  
+  pData(cur.eset) <- new.annot
+  
+  return(cur.eset)
+}
+
+
+UpdateAnnotations_GSE18105_GPL570 <- function(cur.eset) {
+  ## Get the original pheno-data, and convert all of the factors into strings.
+  annot <- notes(cur.eset)$original.pData
+  annot <- data.frame(lapply(annot, as.character), stringsAsFactors = FALSE)
+  new.annot <- data.frame(row.names=rownames(annot), stringsAsFactors = FALSE)
+  ## Keep the geo-accession IDs for each entry just for unique identifiability and consistency.
+  new.annot$geo_accession <- annot$geo_accession
+  ## Also keep the titles for this dataset, since they might be useful for reminding us
+  ##  which samples are paired, and which are Laser-Capture Microdisection (LCM).
+  new.annot$title <- annot$title
+  
+  ## Data annotations appear to be well formatted.  No adjustments necessary!
+  
+  ##---------------------------------------------------------------------------=
+  ## Create the contrast:
+  ##-----------=
+  ##  - CONTRAST_PairedCRCTumor_vs_Normal = Compare only the 17 colorectal tumors 
+  ##        that have adjacent non-cancerous colon samples, to those non-cancerous
+  ##        "normals".
+  ##  - CONTRAST_AllCRCTumors_vs_Normal = Comparison of the 77 LCM tumor samples + 17 paired tumors
+  ##        to the 17 "normal" adjacents.
+  ##
+  ##-----------=
+  ##  * NOTE: These are effectively two different ways of looking at the same 
+  ##    contrast (i.e. CRC vs normal).  We need to take this into account 
+  ##    when considering results.
+  ##---------------------------------------------------------------------------=
+  ## Get the index for the different tumors and normals:
+  paired.CRC.tumor.idx <- grep(pattern = "cancer, homogenized", annot$title, ignore.case = TRUE)
+  paired.normal.colon.idx <- grep(pattern = "normal, homogenized", annot$title, ignore.case = TRUE)
+  LCM.CRC.tumor.idx <- grep(pattern = "cancer, LCM", annot$title, ignore.case = TRUE)
+  
+  ## Contrast for Primary Colorectal tumor vs normal colon.
+  new.annot$CONTRAST_PairedCRCTumor_vs_Normal <- 0
+  new.annot$CONTRAST_PairedCRCTumor_vs_Normal[ paired.CRC.tumor.idx ]  <- 1
+  new.annot$CONTRAST_PairedCRCTumor_vs_Normal[ paired.normal.colon.idx ] <- (-1)
+  
+  ## Contrast for Liver metasteses vs normal liver.
+  new.annot$CONTRAST_AllCRCTumors_vs_Normal <- 0
+  new.annot$CONTRAST_AllCRCTumors_vs_Normal[ c(LCM.CRC.tumor.idx, paired.CRC.tumor.idx) ]  <- 1
+  new.annot$CONTRAST_AllCRCTumors_vs_Normal[ paired.normal.colon.idx ] <- (-1)
+  
+  
+  pData(cur.eset) <- new.annot
+  
+  return(cur.eset)
+}
+
+
+
+UpdateAnnotations_GSE5206_GPL570 <- function(cur.eset) {
+  ## Get the original pheno-data, and convert all of the factors into strings.
+  annot <- notes(cur.eset)$original.pData
+  annot <- data.frame(lapply(annot, as.character), stringsAsFactors = FALSE)
+  new.annot <- data.frame(row.names=rownames(annot), stringsAsFactors = FALSE)
+  ## Keep the geo-accession IDs for each entry just for unique identifiability and consistency.
+  new.annot$geo_accession <- annot$geo_accession
+  ## Also keep the titles for this dataset, since they might be useful for reminding us
+  ##  which samples are paired, and which are Laser-Capture Microdisection (LCM).
+  new.annot$title <- annot$title
+  
+  ## Data annotations appear to be well formatted.  No adjustments necessary!
+  
+  ##---------------------------------------------------------------------------=
+  ## Create the contrast:
+  ##-----------=
+  ##  - CONTRAST_CRCTumor_vs_Normal = the 100 CRC tumors vs 5 normals.
+  ##---------------------------------------------------------------------------=
+  ## Get the index for the different tumors and normals:
+  tumor.idx <- grep(pattern = "ID: T", as.character(annot$title))
+  normal.idx <- grep(pattern = "ID: N", as.character(annot$title))
+  
+  ## Contrast for Colorectal tumor vs normal colon.
+  new.annot$CONTRAST_CRCTumor_vs_Normal <- 0
+  new.annot$CONTRAST_CRCTumor_vs_Normal[ tumor.idx ]  <- 1
+  new.annot$CONTRAST_CRCTumor_vs_Normal[ normal.idx ] <- (-1)
+  
+  
+  pData(cur.eset) <- new.annot
+  
+  return(cur.eset)
+}
+
+
+
+
+
