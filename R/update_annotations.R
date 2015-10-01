@@ -679,6 +679,162 @@ UpdateAnnotations_GSE5206_GPL570 <- function(cur.eset) {
 }
 
 
+UpdateAnnotations_GSE20881_GPL1708 <- function(cur.eset) {
+  ## Get the original pheno-data, and convert all of the factors into strings.
+  annot <- notes(cur.eset)$original.pData
+  annot <- data.frame(lapply(annot, as.character), stringsAsFactors = FALSE)
+  new.annot <- data.frame(row.names=rownames(annot), stringsAsFactors = FALSE)
+  ## Keep the geo-accession IDs for each entry just for unique identifiability and consistency.
+  new.annot$geo_accession <- annot$geo_accession
+  ## Also keep the titles for this dataset, since they might be useful for reminding us
+  ##  which samples are paired, and which are Laser-Capture Microdisection (LCM).
+  new.annot$sample_source <- annot$source_name_ch1
+  
+  ## Data annotations appear to be well formatted.  No adjustments necessary!
+  
+  ##---------------------------------------------------------------------------=
+  ## Create the contrasts:
+  ##-----------=
+  ##  - CONTRAST_AscendColon_Crohns_vs_Healthy
+  ##  - CONTRAST_DescendColon_Crohns_vs_Healthy
+  ##  - CONTRAST_SigmoidColon_Crohns_vs_Healthy
+  ##  - CONTRAST_TerminalIleumColon_Crohns_vs_Healthy
+  ##---------------------------------------------------------------------------=
+  
+  ## Contrast for Ascending colon Crohn's vs normal.
+  crohns.idx <- grep("ascending colon biopsy from crohns disease subject", as.character(annot$source_name_ch1))
+  normal.idx <- grep("ascending colon biopsy from healthy subject", as.character(annot$source_name_ch1))
+  new.annot$CONTRAST_AscendColon_Crohns_vs_Healthy <- 0
+  new.annot$CONTRAST_AscendColon_Crohns_vs_Healthy[ crohns.idx ]  <- 1
+  new.annot$CONTRAST_AscendColon_Crohns_vs_Healthy[ normal.idx ] <- (-1)
+  
+  ## Contrast for descending colon Crohn's vs normal.
+  crohns.idx <- grep("descending colon biopsy from crohns disease subject", as.character(annot$source_name_ch1))
+  normal.idx <- grep("descending colon biopsy from healthy subject", as.character(annot$source_name_ch1))
+  new.annot$CONTRAST_DescendColon_Crohns_vs_Healthy <- 0
+  new.annot$CONTRAST_DescendColon_Crohns_vs_Healthy[ crohns.idx ]  <- 1
+  new.annot$CONTRAST_DescendColon_Crohns_vs_Healthy[ normal.idx ] <- (-1)
+  
+  ## Contrast for sigmoid colon Crohn's vs normal.
+  crohns.idx <- grep("sigmoid colon biopsy from crohns disease subject", as.character(annot$source_name_ch1))
+  normal.idx <- grep("sigmoid colon biopsy from healthy subject", as.character(annot$source_name_ch1))
+  new.annot$CONTRAST_SigmoidColon_Crohns_vs_Healthy <- 0
+  new.annot$CONTRAST_SigmoidColon_Crohns_vs_Healthy[ crohns.idx ]  <- 1
+  new.annot$CONTRAST_SigmoidColon_Crohns_vs_Healthy[ normal.idx ] <- (-1)
+  
+  ## Contrast for terminal ileum Crohn's vs normal.
+  crohns.idx <- grep("terminal ileum biopsy from crohns disease subject", as.character(annot$source_name_ch1))
+  normal.idx <- grep("terminal ileum biopsy from healthy subject", as.character(annot$source_name_ch1))
+  new.annot$CONTRAST_TerminalIleumColon_Crohns_vs_Healthy <- 0
+  new.annot$CONTRAST_TerminalIleumColon_Crohns_vs_Healthy[ crohns.idx ]  <- 1
+  new.annot$CONTRAST_TerminalIleumColon_Crohns_vs_Healthy[ normal.idx ] <- (-1)
+  
+  
+  pData(cur.eset) <- new.annot
+  
+  return(cur.eset)
+}
 
+
+UpdateAnnotations_GSE24287_GPL6480 <- function(cur.eset) {
+  ## Get the original pheno-data, and convert all of the factors into strings.
+  annot <- notes(cur.eset)$original.pData
+  annot <- data.frame(lapply(annot, as.character), stringsAsFactors = FALSE)
+  new.annot <- data.frame(row.names=rownames(annot), stringsAsFactors = FALSE)
+  ## Keep the geo-accession IDs for each entry just for unique identifiability and consistency.
+  new.annot$geo_accession <- annot$geo_accession
+  
+  ## Keep the source of the tissue as another field.
+  new.annot$disease_phenotype <- gsub(pattern = "disease phenotype: ", "", annot$characteristics_ch1.1)
+  
+  
+  ##---------------------------------------------------------------------------=
+  ## Create the contrasts:
+  ##-----------=
+  ##  - CONTRAST_IlealCrohns_vs_NoIBD 
+  ##  - CONTRAST_UC_vs_NoIBD
+  ##-----------=
+  ##  * SIDE NOTE: These are 2-chanel chips an the second channel is a comon
+  ##    reference RNA sample from a healthy individual's (no-IBD) ileum.
+  ##---------------------------------------------------------------------------=
+  ## Get the index for the different tumors and normals:
+  ileal.Crohns.idx <- grep(pattern = "illeal Crohn's disease", new.annot$disease_phenotype, ignore.case = TRUE)
+  UC.idx <- grep(pattern = "ulcerative colitis", new.annot$disease_phenotype, ignore.case = TRUE)
+  no.IBD.idx <- grep(pattern = "no inflammatory bowel disease", new.annot$disease_phenotype, ignore.case = TRUE)
+  
+  ## Contrast for Primary Colorectal tumor vs normal colon.
+  new.annot$CONTRAST_IlealCrohns_vs_NoIBD <- 0
+  new.annot$CONTRAST_IlealCrohns_vs_NoIBD[ ileal.Crohns.idx ]  <- 1
+  new.annot$CONTRAST_IlealCrohns_vs_NoIBD[ no.IBD.idx ] <- (-1)
+  
+  ## Contrast for Liver metasteses vs normal liver.
+  new.annot$CONTRAST_UC_vs_NoIBD <- 0
+  new.annot$CONTRAST_UC_vs_NoIBD[ UC.idx ]  <- 1
+  new.annot$CONTRAST_UC_vs_NoIBD[ no.IBD.idx ] <- (-1)
+  
+  
+  pData(cur.eset) <- new.annot
+  
+  return(cur.eset)
+}
+
+
+
+
+UpdateAnnotations_GSE14323_GPL571 <- function(cur.eset) {
+  ## Get the original pheno-data, and convert all of the factors into strings.
+  annot <- notes(cur.eset)$original.pData
+  annot <- data.frame(lapply(annot, as.character), stringsAsFactors = FALSE)
+  new.annot <- data.frame(row.names=rownames(annot), stringsAsFactors = FALSE)
+  ## Keep the geo-accession IDs for each entry just for unique identifiability and consistency.
+  new.annot$geo_accession <- annot$geo_accession
+  
+  ## Keep the source of the tissue as another field.
+  new.annot$sample_source <- annot$source_name_ch1
+  
+  
+  ##---------------------------------------------------------------------------=
+  ## Create the contrasts:
+  ##-----------=
+  ##  - CONTRAST_HCV.cirrhosis.no.HCC_vs_NormalLiver 
+  ##  - CONTRAST_HCC_vs_NormalLiver
+  ##  - CONTRAST_no.HCC.cirrhosis_vs_HCC.cirrhosis
+  ##  - CONTRAST_HCC_vs_adjacent.cirrhotic
+  ##  - CONTRAST_all.cirrhotic_vs_NormalLiver
+  ##-----------=
+  ##  * SIDE NOTE: Probably won't use all of these.  We'll probably only add
+  ##    one or two of the contrasts to the targets list.  Though this is worth
+  ##    revisiting to determine which diseases to investigate.
+  ##---------------------------------------------------------------------------=
+  ## Get the index for the different tumors and normals:
+  cirrhosis.no.HCC.idx <- which(new.annot$sample_source == "liver tissue with cirrhosis")
+  cirrhosis.yes.HCC.idx <- which(new.annot$sample_source == "liver tissue with cirrhosisHCC")
+  HCC.idx <- which(new.annot$sample_source == "liver tissue with HCC")
+  healthy.liver.idx <- which(new.annot$sample_source == "Normal liver tissue")
+  
+  new.annot$CONTRAST_HCV.cirrhosis.no.HCC_vs_NormalLiver <- 0
+  new.annot$CONTRAST_HCV.cirrhosis.no.HCC_vs_NormalLiver[ cirrhosis.no.HCC.idx ]  <- 1
+  new.annot$CONTRAST_HCV.cirrhosis.no.HCC_vs_NormalLiver[ healthy.liver.idx ] <- (-1)
+  
+  new.annot$CONTRAST_HCC_vs_NormalLiver <- 0
+  new.annot$CONTRAST_HCC_vs_NormalLiver[ HCC.idx ]  <- 1
+  new.annot$CONTRAST_HCC_vs_NormalLiver[ healthy.liver.idx ] <- (-1)
+  
+  new.annot$CONTRAST_no.HCC.cirrhosis_vs_HCC.cirrhosis <- 0
+  new.annot$CONTRAST_no.HCC.cirrhosis_vs_HCC.cirrhosis[ cirrhosis.yes.HCC.idx ]  <- 1
+  new.annot$CONTRAST_no.HCC.cirrhosis_vs_HCC.cirrhosis[ cirrhosis.no.HCC.idx ] <- (-1)
+  
+  new.annot$CONTRAST_HCC_vs_adjacent.cirrhotic <- 0
+  new.annot$CONTRAST_HCC_vs_adjacent.cirrhotic[ HCC.idx ]  <- 1
+  new.annot$CONTRAST_HCC_vs_adjacent.cirrhotic[ cirrhosis.yes.HCC.idx ] <- (-1)
+  
+  new.annot$CONTRAST_all.cirrhotic_vs_NormalLiver <- 0
+  new.annot$CONTRAST_all.cirrhotic_vs_NormalLiver[ c(cirrhosis.no.HCC.idx, cirrhosis.yes.HCC.idx) ]  <- 1
+  new.annot$CONTRAST_all.cirrhotic_vs_NormalLiver[ healthy.liver.idx  ] <- (-1)
+  
+  pData(cur.eset) <- new.annot
+  
+  return(cur.eset)
+}
 
 
