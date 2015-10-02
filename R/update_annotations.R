@@ -838,3 +838,200 @@ UpdateAnnotations_GSE14323_GPL571 <- function(cur.eset) {
 }
 
 
+
+UpdateAnnotations_GSE3189_GPL96 <- function(cur.eset) {
+  ## Get the original pheno-data, and convert all of the factors into strings.
+  annot <- notes(cur.eset)$original.pData
+  annot <- data.frame(lapply(annot, as.character), stringsAsFactors = FALSE)
+  new.annot <- data.frame(row.names=rownames(annot), stringsAsFactors = FALSE)
+  ## Keep the geo-accession IDs for each entry just for unique identifiability and consistency.
+  new.annot$geo_accession <- annot$geo_accession
+  
+  ## Keep the sample descriptors.
+  new.annot$sample_description <- annot$characteristics_ch1
+  
+  ##---------------------------------------------------------------------------=
+  ## Create the contrast:
+  ##-----------=
+  ##  - CONTRAST_Melanoma_vs_NormalSkin.
+  ##---------------------------------------------------------------------------=
+  ## Get the index for the different diseases' samples and normals:
+  melanoma.idx <- which(new.annot$sample_description == "Melanoma")
+  normal.idx <- which(new.annot$sample_description == "Normal")
+  
+  new.annot$CONTRAST_Melanoma_vs_NormalSkin <- 0
+  new.annot$CONTRAST_Melanoma_vs_NormalSkin[ melanoma.idx ]  <- 1
+  new.annot$CONTRAST_Melanoma_vs_NormalSkin[ normal.idx ] <- (-1)
+  
+  pData(cur.eset) <- new.annot
+  
+  return(cur.eset)
+}
+
+UpdateAnnotations_GSE19804_GPL570 <- function(cur.eset) {
+  ## Get the original pheno-data, and convert all of the factors into strings.
+  annot <- notes(cur.eset)$original.pData
+  annot <- data.frame(lapply(annot, as.character), stringsAsFactors = FALSE)
+  new.annot <- data.frame(row.names=rownames(annot), stringsAsFactors = FALSE)
+  ## Keep the geo-accession IDs for each entry just for unique identifiability and consistency.
+  new.annot$geo_accession <- annot$geo_accession
+  
+  ## Keep the sample descriptors.
+  new.annot$sample_description <- annot$characteristics_ch1
+  
+  ##---------------------------------------------------------------------------=
+  ## Create the contrast:
+  ##-----------=
+  ##  - CONTRAST_LungCancer_vs_NormalAdjacent
+  ##---------------------------------------------------------------------------=
+  ## Get the index for the different diseases' samples and normals:
+  lung.cancer.idx <- which(new.annot$sample_description == "tissue: lung cancer")
+  normal.idx <- which(new.annot$sample_description == "tissue: paired normal adjacent")
+  
+  new.annot$CONTRAST_LungCancer_vs_NormalAdjacent <- 0
+  new.annot$CONTRAST_LungCancer_vs_NormalAdjacent[ lung.cancer.idx ]  <- 1
+  new.annot$CONTRAST_LungCancer_vs_NormalAdjacent[ normal.idx ] <- (-1)
+  
+  pData(cur.eset) <- new.annot
+  
+  return(cur.eset)
+}
+
+
+UpdateAnnotations_GSE32676_GPL570 <- function(cur.eset) {
+  ## Get the original pheno-data, and convert all of the factors into strings.
+  annot <- notes(cur.eset)$original.pData
+  annot <- data.frame(lapply(annot, as.character), stringsAsFactors = FALSE)
+  new.annot <- data.frame(row.names=rownames(annot), stringsAsFactors = FALSE)
+  ## Keep the geo-accession IDs for each entry just for unique identifiability and consistency.
+  new.annot$geo_accession <- annot$geo_accession
+  
+  ## Keep the sample description
+  new.annot$sample_description <- gsub(pattern = "disease status: ", "", annot$characteristics_ch1.1)
+  
+  ##---------------------------------------------------------------------------=
+  ## Create the contrast:
+  ##-----------=
+  ##  - CONTRAST_PancreaticCancer_vs_NormalPancreas
+  ##---------------------------------------------------------------------------=
+  ## Get the index for the different diseases' samples and normals:
+  tumor.idx <- which(new.annot$sample_description == "pancreatic cancer")
+  normal.idx <- which(new.annot$sample_description == "non-malignant pancreas")
+  
+  new.annot$CONTRAST_PancreaticCancer_vs_NormalPancreas <- 0
+  new.annot$CONTRAST_PancreaticCancer_vs_NormalPancreas[ tumor.idx ]  <- 1
+  new.annot$CONTRAST_PancreaticCancer_vs_NormalPancreas[ normal.idx ]  <- (-1)
+  
+  pData(cur.eset) <- new.annot
+  
+  return(cur.eset)
+}
+
+
+UpdateAnnotations_GSE16515_GPL570 <- function(cur.eset) {
+  ## Get the original pheno-data, and convert all of the factors into strings.
+  annot <- notes(cur.eset)$original.pData
+  annot <- data.frame(lapply(annot, as.character), stringsAsFactors = FALSE)
+  new.annot <- data.frame(row.names=rownames(annot), stringsAsFactors = FALSE)
+  ## Keep the geo-accession IDs for each entry just for unique identifiability and consistency.
+  new.annot$geo_accession <- annot$geo_accession
+  
+  ## Keep the sample description
+  new.annot$sample_description <- gsub(pattern = "tissue: ", "", annot$characteristics_ch1)
+  
+  ##---------------------------------------------------------------------------=
+  ## Create the contrast:
+  ##-----------=
+  ##  - CONTRAST_PancreaticCancer_vs_NormalPancreas
+  ##---------------------------------------------------------------------------=
+  ## Get the index for the different diseases' samples and normals:
+  tumor.idx <- which(new.annot$sample_description == "Tumor Tissue in Pancreatic Cancer Sample")
+  normal.idx <- which(new.annot$sample_description == "Normal Tissue in Pancreatic Cancer Sample")
+  
+  new.annot$CONTRAST_PancreaticCancer_vs_NormalPancreas <- 0
+  new.annot$CONTRAST_PancreaticCancer_vs_NormalPancreas[ tumor.idx ]  <- 1
+  new.annot$CONTRAST_PancreaticCancer_vs_NormalPancreas[ normal.idx ]  <- (-1)
+  
+  pData(cur.eset) <- new.annot
+  
+  return(cur.eset)
+}
+
+
+UpdateAnnotations_GSE12021_GPL96 <- function(cur.eset) {
+  ## Get the original pheno-data, and convert all of the factors into strings.
+  annot <- notes(cur.eset)$original.pData
+  annot <- data.frame(lapply(annot, as.character), stringsAsFactors = FALSE)
+  new.annot <- data.frame(row.names=rownames(annot), stringsAsFactors = FALSE)
+  ## Keep the geo-accession IDs for each entry just for unique identifiability and consistency.
+  new.annot$geo_accession <- annot$geo_accession
+  
+  ## Keep the sample description
+  new.annot$sample_description <- annot$characteristics_ch1.2
+  RA.idx <- grep(pattern = "rheumatoid arthritis", new.annot$sample_description)
+  new.annot$sample_description[RA.idx] <- "rheumatoid arthritis"
+  OA.idx <- grep(pattern = "osteoarthritis", new.annot$sample_description)
+  new.annot$sample_description[OA.idx] <- "osteoarthritis"
+  normal.idx <- grep(pattern = "normal", new.annot$sample_description)
+  new.annot$sample_description[normal.idx] <- "normal control"
+  
+  
+  ##---------------------------------------------------------------------------=
+  ## Create the contrast:
+  ##-----------=
+  ##  - CONTRAST_RA_vs_NormalSynovialMembrane
+  ##  - CONTRAST_OA_vs_NormalSynovialMembrane
+  ##---------------------------------------------------------------------------=
+  
+  new.annot$CONTRAST_RA_vs_NormalSynovialMembrane <- 0
+  new.annot$CONTRAST_RA_vs_NormalSynovialMembrane[ RA.idx ]  <- 1
+  new.annot$CONTRAST_RA_vs_NormalSynovialMembrane[ normal.idx ]  <- (-1)
+  
+  new.annot$CONTRAST_OA_vs_NormalSynovialMembrane <- 0
+  new.annot$CONTRAST_OA_vs_NormalSynovialMembrane[ OA.idx ]  <- 1
+  new.annot$CONTRAST_OA_vs_NormalSynovialMembrane[ normal.idx ]  <- (-1)
+  
+  pData(cur.eset) <- new.annot
+  
+  return(cur.eset)
+}
+
+
+
+UpdateAnnotations_GSE15573_GPL6102 <- function(cur.eset) {
+  ## Get the original pheno-data, and convert all of the factors into strings.
+  annot <- notes(cur.eset)$original.pData
+  annot <- data.frame(lapply(annot, as.character), stringsAsFactors = FALSE)
+  new.annot <- data.frame(row.names=rownames(annot), stringsAsFactors = FALSE)
+  ## Keep the geo-accession IDs for each entry just for unique identifiability and consistency.
+  new.annot$geo_accession <- annot$geo_accession
+  
+  ## Keep the sample description
+  new.annot$sample_description <- gsub(pattern = "status: ", replacement = "", annot$characteristics_ch1)
+  
+  ##---------------------------------------------------------------------------=
+  ## Create the contrast:
+  ##-----------=
+  ##  - CONTRAST_RA_vs_Control_PBMC
+  ##---------------------------------------------------------------------------=
+  RA.idx <- which(new.annot$sample_description == "Rheumatoid Arthritis Patient")
+  normal.idx <- which(new.annot$sample_description == "Control")
+  
+  new.annot$CONTRAST_RA_vs_Control_PBMC <- 0
+  new.annot$CONTRAST_RA_vs_Control_PBMC[ RA.idx ]  <- 1
+  new.annot$CONTRAST_RA_vs_Control_PBMC[ normal.idx ]  <- (-1)
+  
+  pData(cur.eset) <- new.annot
+  
+  return(cur.eset)
+}
+
+
+
+
+
+
+
+
+
+
