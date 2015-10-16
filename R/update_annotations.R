@@ -751,8 +751,8 @@ UpdateAnnotations_GSE24287_GPL6480 <- function(cur.eset) {
   ##---------------------------------------------------------------------------=
   ## Create the contrasts:
   ##-----------=
-  ##  - CONTRAST_IlealCrohns_vs_NoIBD 
-  ##  - CONTRAST_UC_vs_NoIBD
+  ##  - CONTRAST_unaffIlealCrohns_vs_NoIBD 
+  ##  - CONTRAST_unaffUC_vs_NoIBD
   ##-----------=
   ##  * SIDE NOTE: These are 2-chanel chips an the second channel is a comon
   ##    reference RNA sample from a healthy individual's (no-IBD) ileum.
@@ -762,15 +762,13 @@ UpdateAnnotations_GSE24287_GPL6480 <- function(cur.eset) {
   UC.idx <- grep(pattern = "ulcerative colitis", new.annot$disease_phenotype, ignore.case = TRUE)
   no.IBD.idx <- grep(pattern = "no inflammatory bowel disease", new.annot$disease_phenotype, ignore.case = TRUE)
   
-  ## Contrast for Primary Colorectal tumor vs normal colon.
-  new.annot$CONTRAST_IlealCrohns_vs_NoIBD <- 0
-  new.annot$CONTRAST_IlealCrohns_vs_NoIBD[ ileal.Crohns.idx ]  <- 1
-  new.annot$CONTRAST_IlealCrohns_vs_NoIBD[ no.IBD.idx ] <- (-1)
+  new.annot$CONTRAST_unaffIlealCrohns_vs_NoIBD <- 0
+  new.annot$CONTRAST_unaffIlealCrohns_vs_NoIBD[ ileal.Crohns.idx ]  <- 1
+  new.annot$CONTRAST_unaffIlealCrohns_vs_NoIBD[ no.IBD.idx ] <- (-1)
   
-  ## Contrast for Liver metasteses vs normal liver.
-  new.annot$CONTRAST_UC_vs_NoIBD <- 0
-  new.annot$CONTRAST_UC_vs_NoIBD[ UC.idx ]  <- 1
-  new.annot$CONTRAST_UC_vs_NoIBD[ no.IBD.idx ] <- (-1)
+  new.annot$CONTRAST_unaffUC_vs_NoIBD <- 0
+  new.annot$CONTRAST_unaffUC_vs_NoIBD[ UC.idx ]  <- 1
+  new.annot$CONTRAST_unaffUC_vs_NoIBD[ no.IBD.idx ] <- (-1)
   
   
   pData(cur.eset) <- new.annot

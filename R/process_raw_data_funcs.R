@@ -320,6 +320,7 @@ ProcessData_affy <- function(data.files, processed.eset, expt.annot, cdf.name=NU
   return(cur.eset)
 }
 
+
 ProcessData_GSE42568_GPL570 <- function(data.files, processed.eset, expt.annot){
   data.files.size <- sapply(data.files, function(file) file.info(file)$size)
   corrupted.file <- which(0 == data.files.size)
@@ -332,7 +333,64 @@ ProcessData_GSE42568_GPL570 <- function(data.files, processed.eset, expt.annot){
 }
 
 
+
 ProcessData_GSE10191_GPL5760 <- function(...){
   ProcessData_affy(..., cdf.name="hgu133plus2hsentrezgcdf")
 }
 
+ProcessData_GSE10616_GPL5760 <- function(...){
+  ProcessData_affy(..., cdf.name="hgu133plus2hsentrezgcdf")
+}
+
+ProcessData_GSE59071_GPL6244 <- function(...){
+  ProcessData_affy(..., cdf.name="hugene10sthsentrezgcdf")
+}
+
+
+ProcessData_GSE20881_GPL1708 <- function(data.files, processed.eset, expt.annot) {
+  library(convert)
+# browser()
+  orig.pData <- notes(processed.eset)$original.pData
+  cur.pData <- pData(processed.eset)
+  rm(processed.eset)
+  
+  RG <- read.maimages(files=data.files, source="agilent",
+                      annotation=c("FeatureNum", "Row", "Col", "ProbeUID", "ControlType", "ProbeName"))
+  rownames(RG$genes) <- RG$genes$FeatureNum
+  
+  RG <- backgroundCorrect(RG, method="normexp", offset=50)
+  MA <- normalizeWithinArrays(RG, method="loess")
+  
+  cur.eset <- as(MA, "ExpressionSet")
+  featureNames(cur.eset) <- RG$genes$FeatureNum
+
+  pData(cur.eset) <- cur.pData
+  notes(cur.eset)$original.pData <- orig.pData
+  
+  return(cur.eset)
+  
+}
+
+
+ProcessData_GSE24287_GPL6480 <- function(data.files, processed.eset, expt.annot) {
+
+  library(convert)
+# browser()
+  
+  orig.pData <- notes(processed.eset)$original.pData
+  cur.pData <- pData(processed.eset)
+  rm(processed.eset)
+  
+  RG <- read.maimages(files=data.files, source="genepix")
+  
+  RG <- backgroundCorrect(RG, method="normexp", offset=50)
+  MA <- normalizeWithinArrays(RG, method="loess")
+  
+  cur.eset <- as(MA, "ExpressionSet")
+  
+  pData(cur.eset) <- cur.pData
+  notes(cur.eset)$original.pData <- orig.pData
+  
+  return(cur.eset)
+  
+}
