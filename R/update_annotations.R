@@ -837,6 +837,60 @@ UpdateAnnotations_GSE14323_GPL571 <- function(cur.eset) {
 
 
 
+UpdateAnnotations_GSE6764_GPL570 <- function(cur.eset) {
+  ## Get the original pheno-data, and convert all of the factors into strings.
+  annot <- notes(cur.eset)$original.pData
+  annot <- data.frame(lapply(annot, as.character), stringsAsFactors = FALSE)
+  new.annot <- data.frame(row.names=rownames(annot), stringsAsFactors = FALSE)
+  ## Keep the geo-accession IDs for each entry just for unique identifiability and consistency.
+  new.annot$geo_accession <- annot$geo_accession
+  
+  ## Keep the tumor descriptors.
+  new.annot$sample_description <- annot$characteristics_ch1
+  
+  ##---------------------------------------------------------------------------=
+  ## Create the contrast:
+  ##-----------=
+  ## For now, let's try grouping all of the HCC's together, and the cirrhosis 
+  ## samples together, and compare each to normal liver.
+  ##
+  ##  - CONTRAST_HCC_vs_NormalLiver.
+  ##  - CONTRAST_Cirrhosis_vs_NormalLiver.
+  ##-----------=
+  ##  * NOTES: This grouping combines samples that perhaps should be considered
+  ##    independently.  For the HCC group, all of the different HCC timepoints
+  ##    are grouped together, and for cirrhosis, I'm combining both the cirrhotic
+  ##    tissues from individuals that have HCC, and those that don't.
+  ##     ALSO, for now I'm ignoring the displastic samples, though I will check
+  ##    with David whether those should be included in one of the other groups.
+  ##---------------------------------------------------------------------------=
+  ## Get the index for the different diseases' samples and normals:
+  cirrhotic.idx <- c(which(new.annot$sample_description == "cirrhotic liver tissue"),
+                     which(new.annot$sample_description == "cirrhotic liver tissue from patients without HCC"))
+  HCC.idx <- c(which(new.annot$sample_description == "very early HCC"),
+               which(new.annot$sample_description == "early HCC"),
+               which(new.annot$sample_description == "advanced HCC"),
+               which(new.annot$sample_description == "very advanced HCC"))
+  normal.idx <- which(new.annot$sample_description == "normal liver tissue")
+  
+  ## Contrast for Primary Colorectal tumor vs normal colon.
+  new.annot$CONTRAST_HCC_vs_NormalLiver <- 0
+  new.annot$CONTRAST_HCC_vs_NormalLiver[ HCC.idx ]  <- 1
+  new.annot$CONTRAST_HCC_vs_NormalLiver[ normal.idx ] <- (-1)
+  
+  ## Contrast for Liver metasteses vs normal liver.
+  new.annot$CONTRAST_CRCLiverMets_vs_NormalLiver <- 0
+  new.annot$CONTRAST_CRCLiverMets_vs_NormalLiver[ cirrhotic.idx ]  <- 1
+  new.annot$CONTRAST_CRCLiverMets_vs_NormalLiver[ normal.idx ] <- (-1)
+  
+  
+  pData(cur.eset) <- new.annot
+  
+  return(cur.eset)
+}
+
+
+
 UpdateAnnotations_GSE3189_GPL96 <- function(cur.eset) {
   ## Get the original pheno-data, and convert all of the factors into strings.
   annot <- notes(cur.eset)$original.pData
