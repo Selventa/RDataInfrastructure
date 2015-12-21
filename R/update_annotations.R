@@ -879,9 +879,9 @@ UpdateAnnotations_GSE6764_GPL570 <- function(cur.eset) {
   new.annot$CONTRAST_HCC_vs_NormalLiver[ normal.idx ] <- (-1)
   
   ## Contrast for Liver metasteses vs normal liver.
-  new.annot$CONTRAST_CRCLiverMets_vs_NormalLiver <- 0
-  new.annot$CONTRAST_CRCLiverMets_vs_NormalLiver[ cirrhotic.idx ]  <- 1
-  new.annot$CONTRAST_CRCLiverMets_vs_NormalLiver[ normal.idx ] <- (-1)
+  new.annot$CONTRAST_Cirrhosis_vs_NormalLiver <- 0
+  new.annot$CONTRAST_Cirrhosis_vs_NormalLiver[ cirrhotic.idx ]  <- 1
+  new.annot$CONTRAST_Cirrhosis_vs_NormalLiver[ normal.idx ] <- (-1)
   
   
   pData(cur.eset) <- new.annot
