@@ -193,6 +193,7 @@ GetEset <- function(GSE.ID, eset.folder = "S:/Groups/R and D Group Documents/GEO
         esets <- c(esets, cur.esets)
         if (verbose) {cat("Loaded ", sub("from_", "", expt.annot$data.source), 
                           " data for ", cur.GSE.ID, " from file.\n", sep="")}
+        
         next
       }
     }
@@ -295,6 +296,17 @@ GetEset <- function(GSE.ID, eset.folder = "S:/Groups/R and D Group Documents/GEO
              eset.folder)
     }
     
+    
+    # we update annotations here so esets loaded from file will still have their
+    # annotations updated
+    cur.esets <- lapply(cur.esets,
+                        UpdateAnnotations,
+                        annot.csv.folder=annot.csv.folder)
+    
+    cur.esets <- lapply(cur.esets,
+                        map.features.to.EGID,
+                        feature.annotation.path=feature.annotation.path,
+                        cache.folder=cache.folder)
     esets <- c(esets, cur.esets)
   }
     
@@ -365,17 +377,22 @@ map.features.to.EGID <- function(cur.eset, platform=NULL, feature.annotation.pat
     return(cur.eset)
   }
   
-  if (!all(rownames(cur.eset) %in% annot[[1]])) {
-    num.in.annot <- sum(rownames(fData(cur.eset)) %in% annot[[1]])
+  fname.col <- which.max(sapply(annot,
+                                function(cur.col.vals) {
+                                  sum(cur.col.vals %in% rownames(fData(cur.eset)))
+                                }))
+  
+  if (!all(rownames(cur.eset) %in% annot[[fname.col]])) {
+    num.in.annot <- sum(rownames(fData(cur.eset)) %in% annot[[fname.col]])
     warning("Only ", num.in.annot, " of ", nrow(cur.eset), 
             " features are found in the feature annotation file ",
             annotation.file, 
             ".  ", nrow(cur.eset) - num.in.annot, 
             " features will be discarded.")
-    cur.eset <- cur.eset[rownames(cur.eset) %in% annot[[1]], ]
+    cur.eset <- cur.eset[rownames(cur.eset) %in% annot[[fname.col]], ]
   }
   
-  fData(cur.eset)$EGID <- annot$EGID[match(rownames(cur.eset), annot[[1]])] 
+  fData(cur.eset)$EGID <- annot$EGID[match(rownames(cur.eset), annot[[fname.col]])] 
   
   return(cur.eset)
 }
