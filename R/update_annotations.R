@@ -530,10 +530,10 @@ UpdateAnnotations_GSE10893_GPL1390 <- function(cur.eset) {
   ## Contrast for Basal-like breast tumors vs normal, where basal-like 
   ##  consists of either receptor-status-definition (ER-/PR-/HER2-) or
   ##  PAM50 intrinsic subtype.
-  new.annot$TNBC.or.Basal_vs_normal <- 0
-  new.annot$TNBC.or.Basal_vs_normal[ (new.annot$TripleNegative_vs_normal == 1)
+  new.annot$TNBC_or_Basal_vs_normal <- 0
+  new.annot$TNBC_or_Basal_vs_normal[ (new.annot$TripleNegative_vs_normal == 1)
                                      | (new.annot$Basal_vs_normal == 1) ] <- 1
-  new.annot$TNBC.or.Basal_vs_normal[ (new.annot$sample_source == "Normal Breast") ] <- (-1)
+  new.annot$TNBC_or_Basal_vs_normal[ (new.annot$sample_source == "Normal Breast") ] <- (-1)
   
   
   pData(cur.eset) <- new.annot
