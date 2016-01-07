@@ -1083,7 +1083,55 @@ UpdateAnnotations_GSE15573_GPL6102 <- function(cur.eset) {
 
 
 
+UpdateAnnotations_GSE23611_GPL6480 <- function(cur.eset) {
+  ## Get the original pheno-data, and convert all of the factors into strings.
+  annot <- notes(cur.eset)$original.pData
+  annot <- data.frame(lapply(annot, as.character), stringsAsFactors = FALSE)
+  new.annot <- data.frame(row.names=rownames(annot), stringsAsFactors = FALSE)
+  ## Keep the geo-accession IDs for each entry just for unique identifiability and consistency.
+  new.annot$geo_accession <- annot$geo_accession
+  
+  ## Note - Data annotations appear to be well formatted.  No adjustments necessary!
+  
+  ## Get the index for the pre-treatment asthmatic samples, and for the lung normals:
+  lung.biopsy.asthmatic.pre.treat <- grep(pattern = "human lung biopsy_asthmatic_pre", annot$source_name_ch1, fixed=T)
+  lung.biopsy.normal <- which(annot$source_name_ch1 == "human lung biopsy_healthy")
+  
+  ## Contrast for asthma vs normal.
+  new.annot$CONTRAST_Asthma_biopsy_v_normal <- 0
+  new.annot$CONTRAST_Asthma_biopsy_v_normal[ lung.biopsy.asthmatic.pre.treat ]  <- 1
+  new.annot$CONTRAST_Asthma_biopsy_v_normal[ lung.biopsy.normal ] <- (-1)
+  
+  
+  pData(cur.eset) <- new.annot
+  
+  return(cur.eset)
+}
 
 
 
+UpdateAnnotations_GSE4302_GPL570 <- function(cur.eset) {
+  ## Get the original pheno-data, and convert all of the factors into strings.
+  annot <- notes(cur.eset)$original.pData
+  annot <- data.frame(lapply(annot, as.character), stringsAsFactors = FALSE)
+  new.annot <- data.frame(row.names=rownames(annot), stringsAsFactors = FALSE)
+  ## Keep the geo-accession IDs for each entry just for unique identifiability and consistency.
+  new.annot$geo_accession <- annot$geo_accession
+  
+  ## Note - Data annotations appear to be well formatted.  No adjustments necessary!
+  
+  ## Get the index for the asthmatic samples, and for the lung normals:
+  lung.brushing.asthmatic.pre.treat <- which(annot$characteristics_ch1 == "Asthmatic at baseline")
+  lung.brushing.normal <- which(annot$characteristics_ch1 == "Healthy control")
+  
+  ## Contrast for asthma vs normal.
+  new.annot$CONTRAST_Asthma_brushing_v_normal <- 0
+  new.annot$CONTRAST_Asthma_brushing_v_normal[ lung.brushing.asthmatic.pre.treat ]  <- 1
+  new.annot$CONTRAST_Asthma_brushing_v_normal[ lung.brushing.normal ] <- (-1)
+  
+  
+  pData(cur.eset) <- new.annot
+  
+  return(cur.eset)
+}
 
