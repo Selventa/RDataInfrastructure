@@ -514,26 +514,26 @@ UpdateAnnotations_GSE10893_GPL1390 <- function(cur.eset) {
   ##  defined for luminal tumors above.)
   ##---------=
   ## Contrast for Triple-negative breast tumors vs normal.
-  new.annot$TripleNegative_vs_normal <- 0
-  new.annot$TripleNegative_vs_normal[ ((new.annot$sample_source == "Breast Tumor") 
-                                       & (new.annot$ER_status == "neg") 
-                                       & (new.annot$PR_status == "neg") 
-                                       & (new.annot$HER2_clin_status == "neg")) ]  <- 1
-  new.annot$TripleNegative_vs_normal[ (new.annot$sample_source == "Normal Breast") ] <- (-1)
+  new.annot$CONTRAST_TripleNegative_vs_normal <- 0
+  new.annot$CONTRAST_TripleNegative_vs_normal[ ((new.annot$sample_source == "Breast Tumor") 
+                                                & (new.annot$ER_status == "neg") 
+                                                & (new.annot$PR_status == "neg") 
+                                                & (new.annot$HER2_clin_status == "neg")) ]  <- 1
+  new.annot$CONTRAST_TripleNegative_vs_normal[ (new.annot$sample_source == "Normal Breast") ] <- (-1)
   
   ## Contrast for Basal-like breast tumors (as defined by PAM50 intrinsic-subtype) vs normal.
-  new.annot$Basal_vs_normal <- 0
-  new.annot$Basal_vs_normal[ ((new.annot$sample_source == "Breast Tumor") 
-                              & (new.annot$intrinsic_subtype == "Basal"))] <- 1
-  new.annot$Basal_vs_normal[ (new.annot$sample_source == "Normal Breast") ] <- (-1)
+  new.annot$CONTRAST_Basal_vs_normal <- 0
+  new.annot$CONTRAST_Basal_vs_normal[ ((new.annot$sample_source == "Breast Tumor") 
+                                       & (new.annot$intrinsic_subtype == "Basal"))] <- 1
+  new.annot$CONTRAST_Basal_vs_normal[ (new.annot$sample_source == "Normal Breast") ] <- (-1)
   
   ## Contrast for Basal-like breast tumors vs normal, where basal-like 
   ##  consists of either receptor-status-definition (ER-/PR-/HER2-) or
   ##  PAM50 intrinsic subtype.
-  new.annot$TNBC_or_Basal_vs_normal <- 0
-  new.annot$TNBC_or_Basal_vs_normal[ (new.annot$TripleNegative_vs_normal == 1)
-                                     | (new.annot$Basal_vs_normal == 1) ] <- 1
-  new.annot$TNBC_or_Basal_vs_normal[ (new.annot$sample_source == "Normal Breast") ] <- (-1)
+  new.annot$CONTRAST_TNBC_or_Basal_vs_normal <- 0
+  new.annot$CONTRAST_TNBC_or_Basal_vs_normal[ (new.annot$CONTRAST_TripleNegative_vs_normal == 1)
+                                              | (new.annot$CONTRAST_Basal_vs_normal == 1) ] <- 1
+  new.annot$CONTRAST_TNBC_or_Basal_vs_normal[ (new.annot$sample_source == "Normal Breast") ] <- (-1)
   
   
   pData(cur.eset) <- new.annot
