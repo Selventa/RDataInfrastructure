@@ -536,11 +536,33 @@ UpdateAnnotations_GSE10893_GPL1390 <- function(cur.eset) {
   new.annot$CONTRAST_TNBC_or_Basal_vs_normal[ (new.annot$sample_source == "Normal Breast") ] <- (-1)
   
   
+  ## Now add contrasts for each individual tumor (if desired).
+  ADD_INDIVIDUAL_TUMOR_CONTRASTS <- TRUE
+  
+  if (ADD_INDIVIDUAL_TUMOR_CONTRASTS) {
+    tumor.idx <- which(new.annot$CONTRAST_AllBreastTumors_vs_normal == 1)
+    normal.idx <- which(new.annot$CONTRAST_AllBreastTumors_vs_normal == (-1))
+    nrow.new.annot <- nrow(new.annot)
+    for (i in tumor.idx) {
+      next.contrast <- rep(0, nrow.new.annot)
+      next.contrast[i] <- 1
+      next.contrast[normal.idx] <- (-1)
+      next.contrast.name <- paste("CONTRAST", 
+                                  "_PATIENT", new.annot$geo_accession[i],
+                                  "_ER", new.annot$ER_status[i],
+                                  "_PR", new.annot$PR_status[i],
+                                  "_HER2", new.annot$HER2_clin_status[i],
+                                  "_Subtype", new.annot$intrinsic_subtype[i],
+                                  "_vs_normal",
+                                  sep="_")
+      new.annot[[next.contrast.name]] <- next.contrast
+    }
+  }
+  
   pData(cur.eset) <- new.annot
   
   return(cur.eset)
 }
-
 
 UpdateAnnotations_GSE5364_GPL96 <- function(cur.eset) {
   ## Get the original pheno-data, and convert all of the factors into strings.
