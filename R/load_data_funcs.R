@@ -296,23 +296,23 @@ GetEset <- function(GSE.ID, eset.folder = "S:/Groups/R and D Group Documents/GEO
              eset.folder)
     }
     
-    
-    # we update annotations here so esets loaded from file will still have their
-    # annotations updated
-    cur.esets <- lapply(cur.esets,
-                        UpdateAnnotations,
-                        annot.csv.folder=annot.csv.folder)
-    
-    cur.esets <- lapply(cur.esets,
-                        map.features.to.EGID,
-                        feature.annotation.path=feature.annotation.path,
-                        cache.folder=cache.folder)
     esets <- c(esets, cur.esets)
+   
   }
     
     
     
+  # we update annotations here so esets loaded from file will still have their
+  # annotations updated
+  esets <- lapply(esets,
+                      UpdateAnnotations,
+                      annot.csv.folder=annot.csv.folder)
   
+  esets <- lapply(esets,
+                      map.features.to.EGID,
+                      feature.annotation.path=feature.annotation.path,
+                      cache.folder=cache.folder)
+
 
   return(invisible(esets))
 }
