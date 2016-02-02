@@ -82,13 +82,17 @@ ProcessRawGEOData <- function(cur.eset, cache.folder, expt.annot, verbose=T) {
     cur.processing.func.name <- cur.ds.processing.func.name
   } else {
     
+    # get the name of the function to process that platform
+    cur.platform.processing.func.name  <- paste0("ProcessData_", platform)
+    
+    # check to see if it's an affy platform
     is.affy.file <- all(grepl("\\.cel$|\\.cel\\.|^none$", supp.files, ignore.case = TRUE))
     
-    if (is.affy.file) {
+    # if there isn't a specific function for that platform, but it is an affy platform, then
+    # use the generic affy processing function
+    if (!exists(cur.platform.processing.func.name) & is.affy.file) {
       cur.platform.processing.func.name <- "ProcessData_affy" 
-    } else {
-      cur.platform.processing.func.name  <- paste0("ProcessData_", platform)
-    }
+    } 
     
     if (!exists(cur.platform.processing.func.name)) {
       if (verbose) {cat("Raw data processing function not available for '", cur.eset.name, "'. ",
