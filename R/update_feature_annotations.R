@@ -129,3 +129,46 @@ UpdateFeatureAnnotations_GPL1390 <- function( gpl.filename, gpl.path = getwd(), 
   return(invisible(annotations.df))
 }
 
+
+##-----------------------------------------------------------------------------=
+## GPL4133: "Agilent-014850 Whole Human Genome Microarray 4x44K G4112F" chip.
+##------=
+## The annotation file doesn't contain an explicitly-named "EGID" column, but
+##  does contain the EGIDs in it's "GENE" column, so simply add that column
+##  annotation if not already added.
+##-----------------------------------------------------------------------------=
+UpdateFeatureAnnotations_GPL4133 <- function( gpl.filename, gpl.path = getwd(), replace.original=TRUE ) {
+  
+  ## Read in the current GPL4133 platform annotation CSV file.  
+  annotations.df <- read.csv(file = paste0(gpl.path, "/", gpl.filename), stringsAsFactors = FALSE)
+  
+  ## If there is no EGID (Entrez gene ID) column, then we will add one.
+  if (!("EGID" %in% colnames(annotations.df))) {
+    ## The EGID information is already contained in the "GENE" column.
+    updated.columns <- cbind(annotations.df$GENE,  
+                             Date=as.character(Sys.Date(), format="%b %d %Y"))
+    colnames(updated.columns) <- c("EGID", "EGID_added_date")
+    
+    ## Add the EGIDs and the current date onto the annotation data frame.
+    updated.annotation.df <- cbind(annotations.df, updated.columns)
+    
+    ## Write out the updated annotation data frame back to CSV (replacing
+    ##  the original annotation file if specified).
+    if (replace.original) {
+      write.csv(updated.annotation.df, file = paste0(gpl.path, "/", gpl.filename), row.names = FALSE)
+    } else {
+      write.csv(updated.annotation.df, 
+                file = paste0(gpl.path, "/", 
+                              gsub(pattern = ".csv$", 
+                                   replacement = "_updated.csv", 
+                                   gpl.filename, 
+                                   ignore.case = TRUE)), 
+                row.names = FALSE)
+    }
+    
+    cat("Updated the GPL4133 platform annotation file to include EGIDs.\n")
+  } else {
+    cat("The GPL4133 platform annotation file didn't require updating.\n")
+  }
+}
+
