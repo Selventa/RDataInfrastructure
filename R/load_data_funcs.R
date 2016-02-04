@@ -356,7 +356,7 @@ GetEset <- function(GSE.ID, eset.folder = "S:/Groups/R and D Group Documents/GEO
 }
 
 map.features.to.EGID <- function(cur.eset, platform=NULL, feature.annotation.path="~/Datasets/Feature annotation files/", annotation.file=NULL, cache.folder="~/../Downloads") {
-
+# browser()
   # if we already have EGID in the feature annotations, then return immediately
   if ("EGID" %in% colnames(fData(cur.eset))) {
     return(cur.eset)
@@ -398,7 +398,7 @@ map.features.to.EGID <- function(cur.eset, platform=NULL, feature.annotation.pat
   
   fname.col <- which.max(sapply(annot,
                                 function(cur.col.vals) {
-                                  sum(cur.col.vals %in% eset.features & !is.na(cur.col.vals))
+                                  sum(eset.features %in% cur.col.vals)
                                 }))
   
   if (!all(eset.features %in% annot[[fname.col]])) {
