@@ -103,10 +103,14 @@ LoadEset <- function(GSE.ID, eset.folder = "~/esets",
 
 
 SaveEset <- function(cur.eset, eset.folder) {
+  
+  if (length(cur.esets)==0) {
+    return(invisible(NULL))
+  }
+  
   cur.eset.name <- GetEsetName(cur.eset)
   
   save.file <- file.path(eset.folder, paste0(cur.eset.name, ".RData"))
-  
   
   if (file.exists(save.file)) {
     load(save.file)
@@ -123,13 +127,18 @@ SaveEset <- function(cur.eset, eset.folder) {
              cur.loaded.eset.notes <- notes(cur.loaded.eset)
              cur.eset.notes <- notes(cur.eset)
              
+             # don't compare original pData or status fields...
              cur.loaded.eset.notes$original.pData <- 
                cur.eset.notes$original.pData <- 
+               NULL
+             cur.loaded.eset.notes$status <- 
+               cur.eset.notes$status <- 
                NULL
              
              identical(cur.loaded.eset.notes,
                        cur.eset.notes)
            })
+  
   if (any(loaded.eset.to.replace)) {
     stopifnot(sum(loaded.eset.to.replace)==1)
     esets[loaded.eset.to.replace] <- cur.eset
@@ -157,6 +166,7 @@ GetEsetName <- function(cur.eset) {
 
 ##what other argument options are available for expt.annot?
 GetEset <- function(GSE.ID, eset.folder = "S:/Groups/R and D Group Documents/GEO_data/esets/", 
+#                     download.missing=T,
                     overwrite.existing=F,
                     cache.folder = normalizePath("~/../Downloads"),
                      expt.annot=list(data.source = "from_processed"),
@@ -190,6 +200,18 @@ GetEset <- function(GSE.ID, eset.folder = "S:/Groups/R and D Group Documents/GEO
       
       # if we managed to load from file we can skip to the next GSE.ID
       if (length(cur.esets)>0) {
+        
+        # we update annotations here so esets loaded from file will still have their
+        # annotations updated
+        cur.esets <- lapply(cur.esets,
+                        UpdateAnnotations,
+                        annot.csv.folder=annot.csv.folder)
+        
+        cur.esets <- lapply(cur.esets,
+                        map.features.to.EGID,
+                        feature.annotation.path=feature.annotation.path,
+                        cache.folder=cache.folder)
+        
         esets <- c(esets, cur.esets)
         if (verbose) {cat("Loaded ", sub("from_", "", expt.annot$data.source), 
                           " data for ", cur.GSE.ID, " from file.\n", sep="")}
@@ -302,23 +324,14 @@ GetEset <- function(GSE.ID, eset.folder = "S:/Groups/R and D Group Documents/GEO
     
     
     
-  # we update annotations here so esets loaded from file will still have their
-  # annotations updated
-  esets <- lapply(esets,
-                      UpdateAnnotations,
-                      annot.csv.folder=annot.csv.folder)
-  
-  esets <- lapply(esets,
-                      map.features.to.EGID,
-                      feature.annotation.path=feature.annotation.path,
-                      cache.folder=cache.folder)
+ 
 
 
   return(invisible(esets))
 }
 
 
- getGEO_retry <- function(..., nretry=3, tdelay=3) {
+ getGEO_retry <- function(..., nretry=10, tdelay=3) {
   
   for (cur.try in 1:nretry) {
     cur.eset <- 
@@ -343,7 +356,7 @@ GetEset <- function(GSE.ID, eset.folder = "S:/Groups/R and D Group Documents/GEO
 }
 
 map.features.to.EGID <- function(cur.eset, platform=NULL, feature.annotation.path="~/Datasets/Feature annotation files/", annotation.file=NULL, cache.folder="~/../Downloads") {
-  
+
   # if we already have EGID in the feature annotations, then return immediately
   if ("EGID" %in% colnames(fData(cur.eset))) {
     return(cur.eset)
@@ -377,22 +390,29 @@ map.features.to.EGID <- function(cur.eset, platform=NULL, feature.annotation.pat
     return(cur.eset)
   }
   
+  if ("PROBE_NAME" %in% colnames(fData(cur.eset))) {
+    eset.features <- fData(cur.eset)$PROBE_NAME
+  } else {
+    eset.features <- rownames(fData(cur.eset))
+  }
+  
   fname.col <- which.max(sapply(annot,
                                 function(cur.col.vals) {
-                                  sum(cur.col.vals %in% rownames(fData(cur.eset)))
+                                  sum(cur.col.vals %in% eset.features & !is.na(cur.col.vals))
                                 }))
   
-  if (!all(rownames(cur.eset) %in% annot[[fname.col]])) {
-    num.in.annot <- sum(rownames(fData(cur.eset)) %in% annot[[fname.col]])
+  if (!all(eset.features %in% annot[[fname.col]])) {
+    num.in.annot <- sum(eset.features %in% annot[[fname.col]])
     warning("Only ", num.in.annot, " of ", nrow(cur.eset), 
             " features are found in the feature annotation file ",
             annotation.file, 
             ".  ", nrow(cur.eset) - num.in.annot, 
             " features will be discarded.")
-    cur.eset <- cur.eset[rownames(cur.eset) %in% annot[[fname.col]], ]
+    cur.eset <- cur.eset[eset.features %in% annot[[fname.col]], ]
+    eset.features <- eset.features[eset.features %in% annot[[fname.col]]]
   }
   
-  fData(cur.eset)$EGID <- annot$EGID[match(rownames(cur.eset), annot[[fname.col]])] 
+  fData(cur.eset)$EGID <- annot$EGID[match(eset.features, annot[[fname.col]])] 
   
   return(cur.eset)
 }
