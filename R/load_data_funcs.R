@@ -104,10 +104,6 @@ LoadEset <- function(GSE.ID, eset.folder = "~/esets",
 
 SaveEset <- function(cur.eset, eset.folder) {
   
-  if (length(cur.esets)==0) {
-    return(invisible(NULL))
-  }
-  
   cur.eset.name <- GetEsetName(cur.eset)
   
   save.file <- file.path(eset.folder, paste0(cur.eset.name, ".RData"))
@@ -294,9 +290,7 @@ GetEset <- function(GSE.ID, eset.folder = "S:/Groups/R and D Group Documents/GEO
       
     }
     
-
-
-    
+   
 
     # we update annotations here so annotations get updated before we save to file
     cur.esets <- lapply(cur.esets,
