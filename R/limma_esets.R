@@ -21,22 +21,85 @@ GEOPipelineLimma <- function(relev.eset){
 
 LimmaGeneric <- function(relev.eset){
   #typeof(relev.eset) == expressionSet. This is the eset of interest.
-  
+
   #locate columns which delineate contrasts
   contrast.cols <- grep("^CONTRAST_", colnames(pData(relev.eset)), value=TRUE)
   #create list which holds results
   eFit.res <- list()
   for (contrast in 1:length(contrast.cols)){
+
+    cur.pData <- pData(relev.eset)
+    colnames(cur.pData)[colnames(cur.pData) == contrast.cols[contrast]] <- "CURRENT_CONTRAST"
+    # cur.pData <- filter(cur.pData, CURRENT_CONTRAST %in% c(-1,1))    
+
+    cur.pData <- mutate(cur.pData,
+                        group = c("denominator", "other", "numerator")[CURRENT_CONTRAST+2])
+    
+
+
+# ### code for dealing with multiple samples per subject, either as paired samples or
+#     pt.ID.col <- grep("^PATIENTID_", colnames(cur.pData))
+#     
+#     if (any(pt.ID.col) && any(duplicated(cur.pData[,pt.ID.col]))) {
+#       stopifnot(sum(pt.ID.col)==1)
+#   
+#       colnames(tmp.pData)[pt.ID.col] <- "PATIENTID"
+#       
+#       any.paired.within.group <- 
+#         tmp.pData %>%
+#         select(PATIENTID, CURRENT_CONTRAST) %>%
+#         filter(CURRENT_CONTRAST %in% c(-1,1)) %>%
+#         duplicated %>%
+#         any
+#       
+#       if (any.paired.within.group) {
+#         #create model matrix for this contrast
+#         design <- model.matrix(~0+group, cur.pData)
+#         #remove odd model matrix output where the name used as the first input in model.matrix is added
+#         #to the beginning of the given column names in the data argument of model.matrix
+#         colnames(design) <- sub("group", "",colnames(design))
+#         corfit <- duplicateCorrelation(relev.eset, design, block=cur.pData$PATIENTID)
+#        
+#         fit <- lmFit(relev.eset,design,block=tmp.pData$PATIENTID,correlation=corfit$consensus)
+#       } else {
+#         #create model matrix for this contrast
+#         design <- model.matrix(~0+group+PATIENTID, cur.pData)
+#         #remove odd model matrix output where the name used as the first input in model.matrix is added
+#         #to the beginning of the given column names in the data argument of model.matrix
+#         colnames(design) <- sub("group", "",colnames(design))
+#         
+#         fit <- lmFit(relev.eset, design)
+#       }
+#   
+#     } else {
+#       #create model matrix for this contrast
+#       design <- model.matrix(~0+group, data.frame(group=c("denominator", "other", "numerator")
+#                                                   [cur.pData$CURRENT_CONTRAST]))
+#       
+#       #remove odd model matrix output where the name used as the first input in model.matrix is added
+#       #to the beginning of the given column names in the data argument of model.matrix
+#       colnames(design) <- sub("group", "",colnames(design))
+#       
+#       fit <- lmFit(relev.eset, design)
+#       
+#     }
+# ### END code for dealing with multiple samples per subject, either as paired samples or
+#     
+    
+    
     #create model matrix for this contrast
-    design <- model.matrix(~0+group, data.frame(group=c("denominator", "other", "numerator")
-                                                [pData(relev.eset)[,contrast.cols[contrast]]+2]))
+    design <- model.matrix(~0+group, cur.pData)
+    
     #remove odd model matrix output where the name used as the first input in model.matrix is added
     #to the beginning of the given column names in the data argument of model.matrix
     colnames(design) <- sub("group", "",colnames(design))
+    
     fit <- lmFit(relev.eset, design)
+    
+    
     #try to run contrast; if unsuccessful, return error and go on to the next contrast  
     contrast.eFit <- tryCatch({
-      RunContrasts(contrast.cols[contrast], design, fit)
+      RunContrasts(design, fit)
     }, error = function(err){
       print(paste("Error:", err))
       print(paste("An error occurred. Contrast ", contrast.cols[contrast], "will not be calculated."))
@@ -49,9 +112,7 @@ LimmaGeneric <- function(relev.eset){
   return(eFit.res)
 }
 
-RunContrasts <- function(contrast.column, design.mat,linfit){
-  #typeof(contrast.column) == string. This is the name of the column that holds the designation for which samples should
-  #be compared in the contrast.
+RunContrasts <- function(design.mat,linfit){
   #typeof(design.mat) == matrix. This is the model/design matrix for the linear fit model for the eset of interest.
   #typeof(linfit) == MArrayLM. This is a linear model fit of the eset.
   
